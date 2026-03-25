@@ -370,6 +370,28 @@ function App() {
 
                 if (rw.le_ident) {
                    runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
+                }
+                if (rw.he_ident) {
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
+                }
+              }
+            });
+          }
+          
+          const svgArrow = `
+            <div style="width: 32px; height: 32px;">
+              <svg width="32" height="32" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8));">
+                ${runwaysSvg}
+                <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
+              </svg>
+            </div>
+          `;
+
+          const customIcon = new L.divIcon({
+            html: svgArrow,
+            className: 'custom-wind-marker',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
           });
 
           return (
