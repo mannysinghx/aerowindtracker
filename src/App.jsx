@@ -527,20 +527,22 @@ function App() {
                BETA v1.0.0
             </span>
           </div>
-          <div className="brand glass-pill" style={{ marginLeft: '1rem', padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
-            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {loading ? 'Agent Syncing...' : `LIVE AUTONOMOUS FEED • LAST SYNC: ${lastUpdated || 'N/A'}`}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <div className="brand glass-pill" style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+                {loading ? 'Agent Syncing...' : `LIVE AUTONOMOUS FEED • LAST SYNC: ${lastUpdated || 'N/A'}`}
+              </span>
+            </div>
+            <button 
+              className="glass-pill hover-scale" 
+              onClick={toggleTheme} 
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+              style={{ padding: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
+            >
+               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </div>
-          <button 
-            className="glass-pill hover-scale" 
-            onClick={toggleTheme} 
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
-            style={{ marginLeft: '1rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
-          >
-             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
         </header>
 
         <div className="search-container ui-element glass-panel" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: '300px', padding: '10px', borderRadius: '12px', zIndex: 1000 }}>
