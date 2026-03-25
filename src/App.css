@@ -155,9 +155,6 @@
 
 /* Info Panel */
 .info-panel {
-  position: absolute;
-  left: var(--spacing-lg);
-  bottom: var(--spacing-lg);
   width: 320px;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
