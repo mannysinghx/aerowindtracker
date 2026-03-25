@@ -365,14 +365,14 @@ function App() {
                 const he_x = 16 + distOffset * Math.sin(rad);
                 const he_y = 16 - distOffset * Math.cos(rad);
                 
-                const fontStack = "'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+                const fontStack = "Arial, sans-serif";
                 const textStyle = "text-decoration: none !important; user-select: none;"; // Eradicate phantom browser underlines 
 
                 if (rw.le_ident) {
-                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
+                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
                 }
                 if (rw.he_ident) {
-                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
                 }
               }
             });
