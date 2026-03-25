@@ -106,6 +106,9 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTarget, setSearchTarget] = useState(null);
   const [searchedAirport, setSearchedAirport] = useState(null);
+  
+  // Custom user control for runway labels visibility
+  const [runwayFontSize, setRunwayFontSize] = useState(16);
 
   useEffect(() => {
     let isMounted = true;
@@ -345,16 +348,19 @@ function App() {
                 runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
                 
                 const rad = heading * Math.PI / 180;
-                const le_x = 16 + 68 * Math.sin(rad);
-                const le_y = 16 - 68 * Math.cos(rad);
-                const he_x = 16 - 68 * Math.sin(rad);
-                const he_y = 16 + 68 * Math.cos(rad);
+                const distOffset = 68 + (runwayFontSize - 11); // Push text further out when larger
+                const le_x = 16 + distOffset * Math.sin(rad);
+                const le_y = 16 - distOffset * Math.cos(rad);
+                const he_x = 16 - distOffset * Math.sin(rad);
+                const he_y = 16 + distOffset * Math.cos(rad);
+                
+                const fontStack = "'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif";
 
                 if (rw.le_ident) {
-                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.le_ident}</text>`;
+                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.le_ident}</text>`;
                 }
                 if (rw.he_ident) {
-                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.he_ident}</text>`;
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.he_ident}</text>`;
                 }
               }
             });
@@ -457,6 +463,25 @@ function App() {
                 {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="altitude-control ui-element" style={{ marginTop: '1rem' }}>
+          <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px' }}>
+            Runway Labels
+          </div>
+          <div className="altitude-steps" style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
+            <div 
+              className="altitude-step" 
+              onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))}
+              style={{ fontWeight: 'bold' }}
+            >A-</div>
+            <div className="altitude-step" style={{ background: 'var(--panel-bg)', cursor: 'default' }}>{runwayFontSize}px</div>
+            <div 
+              className="altitude-step" 
+              onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))}
+              style={{ fontWeight: 'bold' }}
+            >A+</div>
           </div>
         </div>
 
