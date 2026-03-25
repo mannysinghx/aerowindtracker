@@ -341,6 +341,7 @@ function App() {
           const showRunways = mapZoom >= 10 && ['ground', '3k', '6k'].includes(altitude);
           
           if (showRunways && rwData.length > 0) {
+            const headingGroups = {};
             rwData.forEach(rw => {
               let heading = rw.le_heading;
               if (heading === null && rw.le_ident) {
@@ -348,6 +349,18 @@ function App() {
                  if (!isNaN(num)) heading = num * 10;
               }
               if (heading !== null) {
+                 const rounded = Math.round(heading / 10) * 10;
+                 if (!headingGroups[rounded]) headingGroups[rounded] = { le_idents: [], he_idents: [] };
+                 if (rw.le_ident && !headingGroups[rounded].le_idents.includes(rw.le_ident)) headingGroups[rounded].le_idents.push(rw.le_ident);
+                 if (rw.he_ident && !headingGroups[rounded].he_idents.includes(rw.he_ident)) headingGroups[rounded].he_idents.push(rw.he_ident);
+              }
+            });
+
+            Object.entries(headingGroups).forEach(([h, group]) => {
+                const heading = parseInt(h);
+                const le_label = group.le_idents.join('/');
+                const he_label = group.he_idents.join('/');
+
                 runwaysSvg += `<line x1="16" y1="6" x2="16" y2="26" stroke="#64748b" stroke-width="6" transform="rotate(${heading} 16 16)" stroke-linecap="round" />`;
                 runwaysSvg += `<line x1="16" y1="7" x2="16" y2="25" stroke="white" stroke-width="1.5" stroke-dasharray="3, 3" transform="rotate(${heading} 16 16)" />`;
                 
@@ -368,13 +381,12 @@ function App() {
                 const fontStack = "Arial, sans-serif";
                 const textStyle = "text-decoration: none !important; user-select: none;"; // Eradicate phantom browser underlines 
 
-                if (rw.le_ident) {
-                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
+                if (le_label) {
+                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${le_label}</text>`;
                 }
-                if (rw.he_ident) {
-                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
+                if (he_label) {
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${he_label}</text>`;
                 }
-              }
             });
           }
           
