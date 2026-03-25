@@ -665,7 +665,7 @@ function App() {
 
         {/* AI Agent Alerts Sidebar */}
         {alertFeed.length > 0 && (
-          <div className="alerts-sidebar ui-element glass-panel" style={{ position: 'absolute', top: '80px', left: '20px', width: '320px', maxHeight: '50vh', overflowY: 'auto', padding: '15px' }}>
+          <div className="alerts-sidebar ui-element glass-panel" style={{ position: 'absolute', top: '80px', left: selectedStation ? '380px' : '20px', width: '320px', maxHeight: '50vh', overflowY: 'auto', padding: '15px', transition: 'left 0.3s ease-out' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
               <AlertTriangle size={18} color="#ef4444" />
               <h3 className="text-md font-bold" style={{ color: '#f8fafc' }}>AeroGuard AI Alerts</h3>
