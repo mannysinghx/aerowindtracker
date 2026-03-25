@@ -519,14 +519,7 @@ function App() {
       </MapContainer>
 
       <div className="overlay-ui">
-        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto' }}>
-          <div className="brand glass-pill" style={{ display: 'flex', alignItems: 'center' }}>
-            <Wind className="brand-icon" size={24} />
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>AeroWind Tracker</h1>
-            <span style={{ background: '#ef4444', color: 'white', padding: '3px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 'bold', marginLeft: '10px', boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
-               BETA v1.0.0
-            </span>
-          </div>
+        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end', width: '100%', padding: '0 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div className="brand glass-pill" style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
@@ -614,7 +607,16 @@ function App() {
           </div>
         </div>
 
-        <div className="left-controls" style={{ position: 'absolute', top: '80px', left: '20px', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 100px)' }}>
+        <div className="left-controls" style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 40px)' }}>
+          {/* Main App Title - Halved Size & Left-Aligned */}
+          <div className="glass-panel ui-element" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', pointerEvents: 'auto', alignSelf: 'flex-start', border: '1px solid var(--panel-border)', borderRadius: '12px', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+            <Wind className="brand-icon" size={16} color="var(--accent-color)" />
+            <h1 className="text-base font-bold" style={{ color: 'var(--text-primary)', marginLeft: '8px', letterSpacing: '0.5px' }}>AeroWind Tracker</h1>
+            <span style={{ background: '#ef4444', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.55rem', fontWeight: 'bold', marginLeft: '8px', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)' }}>
+               BETA
+            </span>
+          </div>
+
           {/* AI Agent Alerts Sidebar - ON TOP */}
           {alertFeed.length > 0 && (
             <div className="alerts-sidebar ui-element glass-panel" style={{ width: '320px', maxHeight: '40vh', overflowY: 'auto', padding: '15px', pointerEvents: 'auto', position: 'relative' }}>
