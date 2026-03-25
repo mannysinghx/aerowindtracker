@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search } from 'lucide-react';
+import 'leaflet/dist/leaflet.css';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Expand, Target, Sun, Moon } from 'lucide-react';
 import { fetchLiveAIData } from './services/api';
 import './App.css';
 
@@ -92,6 +93,7 @@ function MapController({ targetPos }) {
 }
 
 function App() {
+  const [theme, setTheme] = useState('dark');
   const [altitude, setAltitude] = useState('ground');
   const [stations, setStations] = useState([]);
   const [aloftData, setAloftData] = useState([]);
@@ -111,6 +113,23 @@ function App() {
 
   // Custom user control for runway labels visibility
   const [runwayFontSize, setRunwayFontSize] = useState(16);
+
+  // Map style state
+  const [mapStyle, setMapStyle] = useState('dark_all');
+  const [mapStyleName, setMapStyleName] = useState('Dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(t => {
+      const newTheme = t === 'dark' ? 'light' : 'dark';
+      setMapStyle(newTheme === 'dark' ? 'dark_all' : 'light_all');
+      setMapStyleName(newTheme === 'dark' ? 'Dark' : 'Light');
+      return newTheme;
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -325,7 +344,7 @@ function App() {
       <MapContainer center={center} zoom={5} zoomControl={false} className="leaflet-container">
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={`https://{s}.basemaps.cartocdn.com/${mapStyle}/{z}/{x}/{y}{r}.png`}
         />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
         <MapController targetPos={searchTarget} />
@@ -342,8 +361,8 @@ function App() {
           if (isSelected) {
             const radRadius = 130;
 
-            radialBackdrop = `<circle cx="16" cy="16" r="${radRadius}" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5" fill="rgba(0, 0, 0, 0.3)" pointer-events="none" />`;
-            radialBackdrop += `<circle cx="16" cy="16" r="${radRadius + 28}" stroke="rgba(255,255,255,0.05)" stroke-width="1" fill="none" pointer-events="none" />`;
+            radialBackdrop = `<circle cx="16" cy="16" r="${radRadius}" stroke="${theme === 'dark' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(37, 99, 235, 0.3)'}" stroke-width="1.5" fill="${theme === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.6)'}" pointer-events="none" />`;
+            radialBackdrop += `<circle cx="16" cy="16" r="${radRadius + 28}" stroke="${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}" stroke-width="1" fill="none" pointer-events="none" />`;
 
             for (let i = 0; i < 360; i += 10) {
               const isMajor = i % 90 === 0;
@@ -359,14 +378,14 @@ function App() {
               const x2 = 16 + r_end * Math.sin(rad);
               const y2 = 16 - r_end * Math.cos(rad);
 
-              radialForeground += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,0.7)" stroke-width="${strokeWidth}" pointer-events="none" />`;
+              radialForeground += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(15, 23, 42, 0.5)'}" stroke-width="${strokeWidth}" pointer-events="none" />`;
 
               if (isMajor) {
                 const textR = radRadius + 18;
                 const tx = 16 + textR * Math.sin(rad);
                 const ty = 16 - textR * Math.cos(rad);
                 const text = i === 0 ? '0' : `${i}`;
-                radialForeground += `<text x="${tx}" y="${ty}" fill="#38bdf8" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${text}</text>`;
+                radialForeground += `<text x="${tx}" y="${ty}" fill="${theme === 'dark' ? '#38bdf8' : '#2563eb'}" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="pointer-events: none; text-shadow: ${theme === 'dark' ? '0 2px 4px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)'};">${text}</text>`;
               }
             }
 
@@ -404,11 +423,17 @@ function App() {
               const le_label = group.le_idents.join('/');
               const he_label = group.he_idents.join('/');
 
-              runwaysSvg += `<line x1="16" y1="6" x2="16" y2="26" stroke="#64748b" stroke-width="6" transform="rotate(${heading} 16 16)" stroke-linecap="round" />`;
-              runwaysSvg += `<line x1="16" y1="7" x2="16" y2="25" stroke="white" stroke-width="1.5" stroke-dasharray="3, 3" transform="rotate(${heading} 16 16)" />`;
+              const lineColor = theme === 'dark' ? '#64748b' : '#94a3b8';
+              const dashedColor = theme === 'dark' ? 'white' : '#1e293b';
+              const extensionColor = theme === 'dark' ? 'rgba(56, 189, 248, 0.6)' : 'rgba(37, 99, 235, 0.5)';
+              const textColor = theme === 'dark' ? '#ffffff' : '#0f172a';
+              const tShadow = theme === 'dark' ? '' : 'text-shadow: 0 1px 3px rgba(255,255,255,0.9);';
 
-              runwaysSvg += `<line x1="16" y1="-45" x2="16" y2="4" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
-              runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
+              runwaysSvg += `<line x1="16" y1="6" x2="16" y2="26" stroke="${lineColor}" stroke-width="6" transform="rotate(${heading} 16 16)" stroke-linecap="round" />`;
+              runwaysSvg += `<line x1="16" y1="7" x2="16" y2="25" stroke="${dashedColor}" stroke-width="1.5" stroke-dasharray="3, 3" transform="rotate(${heading} 16 16)" />`;
+
+              runwaysSvg += `<line x1="16" y1="-45" x2="16" y2="4" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
+              runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
 
               const rad = heading * Math.PI / 180;
               const distOffset = 68 + (runwayFontSize - 11); // Push text further out when larger
@@ -422,13 +447,13 @@ function App() {
               const he_y = 16 - distOffset * Math.cos(rad);
 
               const fontStack = "Arial, sans-serif";
-              const textStyle = "text-decoration: none !important; user-select: none;"; // Eradicate phantom browser underlines 
+              const textStyle = `text-decoration: none !important; user-select: none; ${tShadow}`; // Eradicate phantom browser underlines 
 
               if (le_label) {
-                runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${le_label}</text>`;
+                runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="${textColor}" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${le_label}</text>`;
               }
               if (he_label) {
-                runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="normal" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${he_label}</text>`;
+                runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="${textColor}" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${he_label}</text>`;
               }
             });
           }
@@ -440,7 +465,7 @@ function App() {
                   ${radialBackdrop}
                   ${runwaysSvg}
                   ${radialForeground}
-                  <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
+                  <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="${theme === 'dark' ? 'white' : '#1e293b'}" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
                 </g>
               </svg>
             </div>
@@ -484,11 +509,19 @@ function App() {
             <h1 className="text-xl font-bold">AeroWind Tracker</h1>
           </div>
           <div className="brand glass-pill" style={{ marginLeft: '1rem', padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : '#94a3b8' }} />
-            <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>
+            <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               {loading ? 'Agent Syncing...' : `LIVE AUTONOMOUS FEED • LAST SYNC: ${lastUpdated || 'N/A'}`}
             </span>
           </div>
+          <button 
+            className="glass-pill hover-scale" 
+            onClick={toggleTheme} 
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+            style={{ marginLeft: '1rem', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
+          >
+             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </header>
 
         <div className="search-container ui-element glass-panel" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: '300px', padding: '10px', borderRadius: '12px', zIndex: 1000 }}>
@@ -566,22 +599,22 @@ function App() {
             <div className="alerts-sidebar ui-element glass-panel" style={{ width: '320px', maxHeight: '40vh', overflowY: 'auto', padding: '15px', pointerEvents: 'auto', position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
                 <AlertTriangle size={18} color="#ef4444" />
-                <h3 className="text-md font-bold" style={{ color: '#f8fafc' }}>AeroGuard AI Alerts</h3>
+                <h3 className="text-md font-bold" style={{ color: 'var(--text-primary)' }}>AeroGuard AI Alerts</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {alertFeed.map((alert, idx) => (
                   <div key={idx} style={{
-                    background: 'rgba(30, 41, 59, 0.6)',
+                    background: theme === 'dark' ? 'rgba(30, 41, 59, 0.6)' : 'rgba(241, 245, 249, 0.8)',
                     borderLeft: `3px solid ${alert.severity === 'HIGH' ? '#ef4444' : alert.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'}`,
                     padding: '10px',
                     borderRadius: '4px',
                     fontSize: '0.85rem',
                     lineHeight: '1.4'
                   }}>
-                    <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : '#f8fafc', display: 'block', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
                       {alert.type} @ {alert.location}
                     </span>
-                    <span style={{ color: '#cbd5e1' }}>{alert.message}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{alert.message}</span>
                   </div>
                 ))}
               </div>

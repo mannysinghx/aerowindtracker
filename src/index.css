@@ -28,6 +28,17 @@
   --wind-extreme: #8b5cf6; /* Purple */
 }
 
+:root[data-theme='light'] {
+  --bg-color: #f1f5f9; /* Slate 100 */
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --panel-bg: rgba(255, 255, 255, 0.85); /* White glass */
+  --panel-border: rgba(0, 0, 0, 0.15);
+  --accent-color: #2563eb; /* Blue 600 */
+  --accent-hover: #1d4ed8; 
+  --accent-glow: rgba(37, 99, 235, 0.4);
+}
+
 * {
   box-sizing: border-box;
 }
