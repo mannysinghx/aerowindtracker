@@ -91,6 +91,56 @@ function MapController({ targetPos }) {
   return null;
 }
 
+function WindRadial({ windDir, windSpeed }) {
+  if (windDir === null || windSpeed === null) return null;
+  const arrowRotation = (windDir + 180) % 360;
+
+  return (
+    <div className="wind-radial glass-panel" style={{ marginTop: '1.5rem', padding: '1.5rem 1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)' }}>
+      <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '1rem', fontWeight: 'bold' }}>Live Wind Vector</div>
+      
+      <div style={{ position: 'relative', width: '130px', height: '130px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.05)', background: 'radial-gradient(circle, rgba(56,189,248,0.05) 0%, rgba(0,0,0,0.4) 100%)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'absolute', top: '4px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>N</div>
+        <div style={{ position: 'absolute', bottom: '4px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>S</div>
+        <div style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>E</div>
+        <div style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>W</div>
+
+        {[0, 30, 60, 90, 120, 150].map(deg => {
+           const isMajor = deg % 90 === 0;
+           return (
+             <div key={deg} style={{
+               position: 'absolute', top: 0, left: '50%', width: '2px', height: '100%',
+               transform: `translateX(-50%) rotate(${deg}deg)`, pointerEvents: 'none',
+               display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: isMajor ? '18px 0' : '22px 0'
+             }}>
+               <div style={{ width: '100%', height: isMajor ? '8px' : '4px', background: isMajor ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)' }}></div>
+               <div style={{ width: '100%', height: isMajor ? '8px' : '4px', background: isMajor ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)' }}></div>
+             </div>
+           );
+        })}
+
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          transform: `rotate(${arrowRotation}deg)`, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none'
+        }}>
+           <div style={{ position: 'absolute', bottom: '50%', left: '50%', transform: 'translateX(-50%)', width: '4px', height: '40px', background: 'linear-gradient(to top, rgba(56,189,248,0.2), #38bdf8)', borderTopLeftRadius: '2px', borderTopRightRadius: '2px' }}></div>
+           <div style={{ position: 'absolute', bottom: 'calc(50% + 40px)', left: '50%', transform: 'translateX(-50%)', width: '0', height: '0', borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderBottom: '14px solid #38bdf8', filter: 'drop-shadow(0 -2px 4px rgba(56,189,248,0.6))' }}></div>
+        </div>
+
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '8px', height: '8px', borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 10px rgba(255,255,255,0.8)', zIndex: 10 }}></div>
+      </div>
+      
+      <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#cbd5e1', textAlign: 'center', display: 'flex', gap: '8px', alignItems: 'center' }}>
+         <Wind size={14} color="#38bdf8" />
+         <span><span style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '1.1rem' }}>{windSpeed}</span> KTS</span>
+         <span style={{ color: '#475569' }}>|</span>
+         <span style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '1.1rem' }}>{windDir}°</span>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [altitude, setAltitude] = useState('ground');
   const [stations, setStations] = useState([]);
@@ -547,12 +597,15 @@ function App() {
               <div className="stat-label"><Wind size={14} /> Gusts</div>
               <div className="stat-value">{selectedStation?.gusts ? `${selectedStation.gusts}kt` : 'N/A'}</div>
             </div>
-            <div className="stat-item">
-              <div className="stat-label"><Thermometer size={14} /> Temp</div>
-              <div className="stat-value">{selectedStation?.temp !== null && selectedStation?.temp !== undefined ? `${selectedStation.temp}°C / ${Math.round((selectedStation.temp * 9/5) + 32)}°F` : 'N/A'}</div>
+            <div className="stat-row">
+              <span className="stat-label">Temperature:</span>
+              <span className="stat-value">{selectedStation.temp !== null ? `${selectedStation.temp}°C / ${Math.round(selectedStation.temp * 9/5 + 32)}°F` : 'N/A'}</span>
             </div>
-            <div className="stat-item">
-              <div className="stat-label"><Droplets size={14} /> Dew Point</div>
+          </div>
+          
+          <WindRadial windDir={selectedStation.windDir} windSpeed={selectedStation.windSpeed} />
+          
+          <div className="station-meta" style={{ marginTop: '1.5rem' }}>            <div className="stat-label"><Droplets size={14} /> Dew Point</div>
               <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9/5) + 32)}°F` : 'N/A'}</div>
             </div>
           </div>
