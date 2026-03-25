@@ -356,36 +356,20 @@ function App() {
                 
                 const rad = heading * Math.PI / 180;
                 const distOffset = 68 + (runwayFontSize - 11); // Push text further out when larger
-                const le_x = 16 + distOffset * Math.sin(rad);
-                const le_y = 16 - distOffset * Math.cos(rad);
-                const he_x = 16 - distOffset * Math.sin(rad);
-                const he_y = 16 + distOffset * Math.cos(rad);
+                
+                // Bottom tip corresponds to the threshold for the le_ident
+                const le_x = 16 - distOffset * Math.sin(rad);
+                const le_y = 16 + distOffset * Math.cos(rad);
+                
+                // Top tip corresponds to the threshold for the he_ident
+                const he_x = 16 + distOffset * Math.sin(rad);
+                const he_y = 16 - distOffset * Math.cos(rad);
                 
                 const fontStack = "'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif";
                 const textStyle = "text-decoration: none !important; user-select: none;"; // Eradicate phantom browser underlines 
 
                 if (rw.le_ident) {
                    runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
-                }
-                if (rw.he_ident) {
-                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
-                }
-              }
-            });
-          }
-          
-          const svgArrow = `
-            <svg width="32" height="32" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8));">
-              ${runwaysSvg}
-              <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round" style="transform: rotate(${rotation}deg); transform-origin: 16px 16px;" />
-            </svg>
-          `;
-
-          const customIcon = new L.divIcon({
-            html: svgArrow,
-            className: 'custom-wind-marker',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
           });
 
           return (
