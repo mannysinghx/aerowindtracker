@@ -597,17 +597,22 @@ function App() {
               <div className="stat-label"><Wind size={14} /> Gusts</div>
               <div className="stat-value">{selectedStation?.gusts ? `${selectedStation.gusts}kt` : 'N/A'}</div>
             </div>
-            <div className="stat-row">
-              <span className="stat-label">Temperature:</span>
-              <span className="stat-value">{selectedStation.temp !== null ? `${selectedStation.temp}°C / ${Math.round(selectedStation.temp * 9/5 + 32)}°F` : 'N/A'}</span>
+            <div className="stat-item">
+              <div className="stat-label"><Thermometer size={14} /> Temp</div>
+              <div className="stat-value">{selectedStation?.temp !== null && selectedStation?.temp !== undefined ? `${selectedStation.temp}°C / ${Math.round((selectedStation.temp * 9/5) + 32)}°F` : 'N/A'}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label"><Droplets size={14} /> Dew Point</div>
+              <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9/5) + 32)}°F` : 'N/A'}</div>
             </div>
           </div>
           
-          <WindRadial windDir={selectedStation.windDir} windSpeed={selectedStation.windSpeed} />
+          <WindRadial windDir={selectedStation?.windDir} windSpeed={selectedStation?.windSpeed} />
           
-          <div className="station-meta" style={{ marginTop: '1.5rem' }}>            <div className="stat-label"><Droplets size={14} /> Dew Point</div>
-              <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9/5) + 32)}°F` : 'N/A'}</div>
-            </div>
+          <div className="station-meta" style={{ marginTop: '1rem', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+            <p className="text-secondary text-xs" style={{ lineHeight: '1.4' }}>
+              Runway interpolation autonomously projected based on current wind vector arrays. Not for real-world navigation.
+            </p>
           </div>
         </div>
 
