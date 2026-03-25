@@ -1,0 +1,212 @@
+/* This app will use index.css for global utilities and component-specific inline CSS or modules where needed. */
+
+.app-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Map specific overrides */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color); /* Match dark mode before loading tiles */
+  z-index: 1;
+}
+
+.radar-pulse {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(59, 130, 246, 0.5);
+  border: 2px solid #60a5fa;
+  border-radius: 50%;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  box-shadow: 0 0 15px #3b82f6;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.3); opacity: 1; border-width: 4px; }
+  100% { transform: scale(3.5); opacity: 0; border-width: 1px; }
+}
+
+/* Leaflet Attribution control styling for dark mode */
+.leaflet-control-attribution {
+  background: var(--panel-bg) !important;
+  color: var(--text-secondary) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 4px 0 0 0;
+}
+.leaflet-control-attribution a {
+  color: var(--accent-color) !important;
+}
+
+.overlay-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Let events pass through to map by default */
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+}
+
+.ui-element {
+  pointer-events: auto; /* Re-enable pointer events for UI panels */
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 0.75rem 1.5rem;
+}
+
+.brand-icon {
+  color: var(--accent-color);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Altitude Slider Container */
+.altitude-control {
+  position: absolute;
+  right: var(--spacing-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 1.5rem 1rem;
+}
+
+.altitude-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.altitude-steps::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--panel-border);
+  z-index: 0;
+}
+
+.altitude-step {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  border: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.altitude-step:hover {
+  border-color: var(--accent-hover);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.altitude-step.active {
+  background: var(--accent-color);
+  border-color: var(--text-primary);
+  color: white;
+  box-shadow: 0 0 15px var(--accent-glow);
+  transform: scale(1.2);
+}
+
+/* Info Panel */
+.info-panel {
+  position: absolute;
+  left: var(--spacing-lg);
+  bottom: var(--spacing-lg);
+  width: 320px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.info-panel.hidden {
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Custom Marker Styles */
+.custom-wind-marker {
+  background: transparent;
+  border: none;
+}
+
+.wind-arrow-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
