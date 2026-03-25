@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Expand, Target, Sun, Moon } from 'lucide-react';
 import { fetchLiveAIData } from './services/api';
+import CrosswindControls from './components/CrosswindControls';
 import './App.css';
 
 const ALTITUDES = [
@@ -336,6 +337,18 @@ function App() {
       });
     }
   };
+
+  // Pre-calculate the current active runway's numerical heading
+  let activeHeading = null;
+  if (selectedStation) {
+     const rwys = runwaysData[selectedStation.id];
+     if (rwys && rwys.length > 0) {
+        const bestStr = getBestRunway(rwys, selectedStation.windDir);
+        if (bestStr) {
+           activeHeading = parseInt(bestStr.replace(/[^0-9]/g, '')) * 10;
+        }
+     }
+  }
 
   const center = [39.8283, -98.5795];
 
@@ -672,6 +685,16 @@ function App() {
               </p>
             </div>
           </div>
+          
+          {selectedStation && (
+             <CrosswindControls 
+                windDir={selectedStation.windDir} 
+                windSpeed={selectedStation.windSpeed} 
+                runwayHeading={activeHeading} 
+                theme={theme} 
+             />
+          )}
+
         </div>
       </div>
     </div>
