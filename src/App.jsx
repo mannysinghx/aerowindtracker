@@ -345,10 +345,10 @@ function App() {
                 runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
                 
                 if (rw.le_ident) {
-                   runwaysSvg += `<text x="16" y="-54" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="900" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.le_ident}</text>`;
+                   runwaysSvg += `<text x="16" y="-54" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="normal" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.le_ident}</text>`;
                 }
                 if (rw.he_ident) {
-                   runwaysSvg += `<text x="16" y="86" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="900" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.he_ident}</text>`;
+                   runwaysSvg += `<text x="16" y="86" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="normal" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.he_ident}</text>`;
                 }
               }
             });
