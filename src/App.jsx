@@ -444,7 +444,7 @@ function App() {
           </div>
         </header>
 
-        <div className="search-container ui-element glass-panel" style={{ position: 'absolute', top: '20px', right: '20px', width: '300px', padding: '10px', borderRadius: '12px', zIndex: 1000 }}>
+        <div className="search-container ui-element glass-panel" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: '300px', padding: '10px', borderRadius: '12px', zIndex: 1000 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Search size={18} color="#94a3b8" />
             <input 
