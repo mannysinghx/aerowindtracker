@@ -1,5 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -136,7 +141,15 @@ app.get('/api/data', (req, res) => {
     res.json(cache);
 });
 
-const PORT = 3001;
+// Host Vite's compiled static dist payload
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Intercept routing errors, forwarding UI to React Router 
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`AI Backend running on port ${PORT}`);
 });

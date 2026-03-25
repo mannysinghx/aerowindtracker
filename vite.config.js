@@ -6,10 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
-        target: 'https://aviationweather.gov',
-        changeOrigin: true,
-      }
+      '/api': 'http://localhost:3001'
     }
   }
 })
