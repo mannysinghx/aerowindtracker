@@ -344,11 +344,17 @@ function App() {
                 runwaysSvg += `<line x1="16" y1="-45" x2="16" y2="4" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
                 runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
                 
+                const rad = heading * Math.PI / 180;
+                const le_x = 16 + 68 * Math.sin(rad);
+                const le_y = 16 - 68 * Math.cos(rad);
+                const he_x = 16 - 68 * Math.sin(rad);
+                const he_y = 16 + 68 * Math.cos(rad);
+
                 if (rw.le_ident) {
-                   runwaysSvg += `<text x="16" y="-54" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="normal" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.le_ident}</text>`;
+                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.le_ident}</text>`;
                 }
                 if (rw.he_ident) {
-                   runwaysSvg += `<text x="16" y="86" fill="rgba(56, 189, 248, 0.95)" font-size="14" font-family="sans-serif" font-weight="normal" text-anchor="middle" dominant-baseline="central" transform="rotate(${heading} 16 16)">${rw.he_ident}</text>`;
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.he_ident}</text>`;
                 }
               }
             });
