@@ -519,8 +519,8 @@ function App() {
       </MapContainer>
 
       <div className="overlay-ui">
-        <header className="app-header overlay-ui" style={{ height: '80px' }}>
-          <div className="brand glass-pill ui-element">
+        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto' }}>
+          <div className="brand glass-pill" style={{ display: 'flex', alignItems: 'center' }}>
             <Wind className="brand-icon" size={24} />
             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>AeroWind Tracker</h1>
             <span style={{ background: '#ef4444', color: 'white', padding: '3px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 'bold', marginLeft: '10px', boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
