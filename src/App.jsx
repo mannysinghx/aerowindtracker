@@ -384,7 +384,50 @@ function App() {
           const rotation = (point.windDir + 180) % 360;
           
           let runwaysSvg = '';
+          let radialBackdrop = '';
+          let radialForeground = '';
+          const isSelected = selectedStation && selectedStation.id === point.id;
           const rwData = runwaysData[point.id] || [];
+          
+          if (isSelected) {
+            const radRadius = 130; 
+            
+            radialBackdrop = `<circle cx="16" cy="16" r="${radRadius}" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5" fill="rgba(0, 0, 0, 0.6)" pointer-events="none" />`;
+            radialBackdrop += `<circle cx="16" cy="16" r="${radRadius + 28}" stroke="rgba(255,255,255,0.05)" stroke-width="1" fill="none" pointer-events="none" />`;
+            
+            for (let i = 0; i < 360; i += 10) {
+              const isMajor = i % 90 === 0;
+              const isMedium = i % 30 === 0;
+              const tickLength = isMajor ? 14 : (isMedium ? 9 : 5);
+              const strokeWidth = isMajor ? 2.5 : 1;
+              const r_start = radRadius - tickLength;
+              const r_end = radRadius;
+              
+              const rad = i * Math.PI / 180;
+              const x1 = 16 + r_start * Math.sin(rad);
+              const y1 = 16 - r_start * Math.cos(rad);
+              const x2 = 16 + r_end * Math.sin(rad);
+              const y2 = 16 - r_end * Math.cos(rad);
+              
+              radialForeground += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,0.7)" stroke-width="${strokeWidth}" pointer-events="none" />`;
+              
+              if (isMajor) {
+                 const textR = radRadius + 18;
+                 const tx = 16 + textR * Math.sin(rad);
+                 const ty = 16 - textR * Math.cos(rad);
+                 const text = i === 0 ? '0' : `${i}`;
+                 radialForeground += `<text x="${tx}" y="${ty}" fill="#38bdf8" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${text}</text>`;
+              }
+            }
+            
+            if (point.windDir !== null) {
+              const arrowRot = (point.windDir + 180) % 360;
+              radialForeground += `<g transform="rotate(${arrowRot} 16 16)" pointer-events="none">
+                               <line x1="16" y1="16" x2="16" y2="${-(radRadius - 22)}" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+                               <polygon points="16,${-(radRadius - 6)} 25,${-(radRadius - 20)} 7,${-(radRadius - 20)}" fill="#38bdf8" />
+                             </g>`;
+            }
+          }
           
           // Only show extended runways when zoomed in beyond state-level overview to avoid map clutter
           // and only up to 6k ft altitude view.
@@ -442,9 +485,13 @@ function App() {
           
           const svgArrow = `
             <div style="width: 32px; height: 32px;">
-              <svg width="32" height="32" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8));">
-                ${runwaysSvg}
-                <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
+              <svg width="32" height="32" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
+                <g style="pointer-events: auto;">
+                  ${radialBackdrop}
+                  ${runwaysSvg}
+                  ${radialForeground}
+                  <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
+                </g>
               </svg>
             </div>
           `;
