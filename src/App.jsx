@@ -67,15 +67,16 @@ function getBestRunway(runways, windDir) {
   return bestRunway;
 }
 
-function BoundsTracker({ setBounds }) {
+function BoundsTracker({ setBounds, setZoom }) {
   const map = useMapEvents({
-    moveend: () => setBounds(map.getBounds()),
-    zoomend:  () => setBounds(map.getBounds()),
+    moveend: () => { setBounds(map.getBounds()); setZoom(map.getZoom()); },
+    zoomend:  () => { setBounds(map.getBounds()); setZoom(map.getZoom()); },
   });
   
   useEffect(() => {
     setBounds(map.getBounds());
-  }, [map, setBounds]);
+    setZoom(map.getZoom());
+  }, [map, setBounds, setZoom]);
   
   return null;
 }
@@ -97,7 +98,8 @@ function App() {
   const [allAirports, setAllAirports] = useState([]);
   const [runwaysData, setRunwaysData] = useState({});
   const [mapBounds, setMapBounds] = useState(null);
-  const [selectedStation, setSelectedStation] = useState(null);
+  const [mapZoom, setMapZoom] = useState(5);
+  const [searchTarget, setSearchTarget] = useState(null);
   const [alertFeed, setAlertFeed] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -325,7 +327,7 @@ function App() {
           attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <BoundsTracker setBounds={setMapBounds} />
+        <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
         <MapController targetPos={searchTarget} />
         {displayPoints.map((point) => {
           const color = getWindColor(point.windSpeed);
@@ -333,7 +335,12 @@ function App() {
           
           let runwaysSvg = '';
           const rwData = runwaysData[point.id] || [];
-          if ((altitude === 'ground' || altitude === '3k') && rwData.length > 0) {
+          
+          // Only show extended runways when zoomed in beyond state-level overview to avoid map clutter
+          // and only up to 6k ft altitude view.
+          const showRunways = mapZoom >= 10 && ['ground', '3k', '6k'].includes(altitude);
+          
+          if (showRunways && rwData.length > 0) {
             rwData.forEach(rw => {
               let heading = rw.le_heading;
               if (heading === null && rw.le_ident) {
@@ -355,12 +362,13 @@ function App() {
                 const he_y = 16 + distOffset * Math.cos(rad);
                 
                 const fontStack = "'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+                const textStyle = "text-decoration: none !important; user-select: none;"; // Eradicate phantom browser underlines 
 
                 if (rw.le_ident) {
-                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.le_ident}</text>`;
+                   runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.le_ident}</text>`;
                 }
                 if (rw.he_ident) {
-                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central">${rw.he_ident}</text>`;
+                   runwaysSvg += `<text x="${he_x}" y="${he_y}" fill="#ffffff" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="900" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${rw.he_ident}</text>`;
                 }
               }
             });
