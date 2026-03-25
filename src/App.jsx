@@ -99,7 +99,7 @@ function App() {
   const [runwaysData, setRunwaysData] = useState({});
   const [mapBounds, setMapBounds] = useState(null);
   const [mapZoom, setMapZoom] = useState(5);
-  const [searchTarget, setSearchTarget] = useState(null);
+  const [selectedStation, setSelectedStation] = useState(null);
   const [alertFeed, setAlertFeed] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
