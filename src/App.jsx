@@ -474,40 +474,42 @@ function App() {
           )}
         </div>
 
-        <div className="altitude-control ui-element">
-          <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.5rem 1rem', marginBottom: '1rem', borderRadius: '20px' }}>
-            Altitude
+        <div className="right-controls">
+          <div className="altitude-control ui-element">
+            <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.5rem 1rem', marginBottom: '1rem', borderRadius: '20px' }}>
+              Altitude
+            </div>
+            <div className="altitude-steps">
+              {ALTITUDES.map((alt) => (
+                <div
+                  key={alt.level}
+                  className={`altitude-step ${altitude === alt.level ? 'active' : ''}`}
+                  onClick={() => setAltitude(alt.level)}
+                  title={alt.label}
+                >
+                  {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="altitude-steps">
-            {ALTITUDES.map((alt) => (
-              <div
-                key={alt.level}
-                className={`altitude-step ${altitude === alt.level ? 'active' : ''}`}
-                onClick={() => setAltitude(alt.level)}
-                title={alt.label}
-              >
-                {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="altitude-control ui-element" style={{ marginTop: '1rem' }}>
-          <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px' }}>
-            Runway Labels
-          </div>
-          <div className="altitude-steps" style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
-            <div 
-              className="altitude-step" 
-              onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))}
-              style={{ fontWeight: 'bold' }}
-            >A-</div>
-            <div className="altitude-step" style={{ background: 'var(--panel-bg)', cursor: 'default' }}>{runwayFontSize}px</div>
-            <div 
-              className="altitude-step" 
-              onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))}
-              style={{ fontWeight: 'bold' }}
-            >A+</div>
+          <div className="runway-control ui-element">
+            <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px' }}>
+              Runway Labels
+            </div>
+            <div className="altitude-steps" style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
+              <div 
+                className="altitude-step" 
+                onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))}
+                style={{ fontWeight: 'bold' }}
+              >A-</div>
+              <div className="altitude-step" style={{ background: 'var(--panel-bg)', cursor: 'default' }}>{runwayFontSize}px</div>
+              <div 
+                className="altitude-step" 
+                onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))}
+                style={{ fontWeight: 'bold' }}
+              >A+</div>
+            </div>
           </div>
         </div>
 

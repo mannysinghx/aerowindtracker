@@ -83,11 +83,19 @@
 }
 
 /* Altitude Slider Container */
-.altitude-control {
+.right-controls {
   position: absolute;
-  right: var(--spacing-lg);
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  z-index: 1000;
+}
+
+.altitude-control, .runway-control {
   display: flex;
   flex-direction: column;
   align-items: center;
