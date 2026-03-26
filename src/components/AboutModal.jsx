@@ -1,7 +1,32 @@
+import { useEffect, useRef } from 'react';
 import { X, Mail, Wind, Bot, Zap, RefreshCw, Heart } from 'lucide-react';
 
 export default function AboutModal({ onClose, theme }) {
   const isDark = theme === 'dark';
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    // Lock body scroll
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Window-level capture: stop wheel events that originate inside the modal
+    // from reaching Leaflet's scroll-wheel-zoom handler (registered at document/container level)
+    const el = modalRef.current;
+    const blockMapWheel = (e) => {
+      if (el && el.contains(e.target)) {
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('wheel', blockMapWheel, { capture: true, passive: true });
+    window.addEventListener('touchmove', blockMapWheel, { capture: true, passive: true });
+
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('wheel', blockMapWheel, { capture: true });
+      window.removeEventListener('touchmove', blockMapWheel, { capture: true });
+    };
+  }, []);
 
   const overlay = {
     position: 'fixed', inset: 0, zIndex: 9999,
@@ -9,6 +34,7 @@ export default function AboutModal({ onClose, theme }) {
     backdropFilter: 'blur(6px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '16px',
+    pointerEvents: 'auto', // parent .overlay-ui has pointer-events:none; must re-enable
   };
 
   const modal = {
@@ -19,6 +45,7 @@ export default function AboutModal({ onClose, theme }) {
     maxWidth: '520px',
     maxHeight: '90vh',
     overflowY: 'auto',
+    overscrollBehavior: 'contain',
     boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
     position: 'relative',
   };
@@ -98,7 +125,7 @@ export default function AboutModal({ onClose, theme }) {
 
   return (
     <div style={overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={modal}>
+      <div ref={modalRef} style={modal}>
         {/* Header */}
         <div style={header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
