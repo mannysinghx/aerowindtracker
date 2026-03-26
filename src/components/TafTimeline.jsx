@@ -8,24 +8,29 @@ const CAT_COLOR = {
   LIFR: { bg: '#a855f7', text: '#fff', label: 'LIFR' },
 };
 
-function fmtTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
+// aviationweather.gov returns period timestamps as Unix seconds (not ms)
+function toDate(val) {
+  if (!val) return null;
+  if (typeof val === 'number') return new Date(val * 1000);
+  return new Date(val); // ISO string (issueTime)
+}
+
+function fmtTime(val) {
+  const d = toDate(val);
+  if (!d || isNaN(d)) return '—';
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + 'Z';
 }
 
-function fmtDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
+function fmtDate(val) {
+  const d = toDate(val);
+  if (!d || isNaN(d)) return '';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 // Clip period to the 24-hour window starting now
 function clipTo24h(period, now, end24) {
-  const from = new Date(period.timeFrom);
-  const to   = new Date(period.timeTo);
+  const from = toDate(period.timeFrom);
+  const to   = toDate(period.timeTo);
   if (isNaN(from) || isNaN(to) || to <= now || from >= end24) return null;
   return {
     ...period,
@@ -222,7 +227,7 @@ export default function TafTimeline({ tafData, loading, theme }) {
                           <div style={{ fontSize: '0.62rem', color: textSecondary }}>Wind</div>
                           <div style={{ fontSize: '0.75rem', color: textPrimary, fontWeight: 600 }}>
                             {p.windSpeed != null
-                              ? `${p.windDir != null ? p.windDir + '°/' : 'VRB/'}${p.windSpeed}kt${p.windGust ? ` G${p.windGust}` : ''}`
+                              ? `${p.windDir != null && p.windDir !== 'VRB' ? p.windDir + '°/' : 'VRB/'}${p.windSpeed}kt${p.windGust ? ` G${p.windGust}` : ''}`
                               : 'Calm'}
                           </div>
                         </div>
