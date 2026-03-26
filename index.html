@@ -3,6 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- ── Preconnect / DNS prefetch ────────────────────────────────────── -->
+    <link rel="preconnect" href="https://aviationweather.gov" crossorigin />
+    <link rel="dns-prefetch" href="https://aviationweather.gov" />
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
+    <link rel="preconnect" href="https://tilecache.rainviewer.com" crossorigin />
+    <link rel="dns-prefetch" href="https://tilecache.rainviewer.com" />
+    <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin />
+    <link rel="dns-prefetch" href="https://basemaps.cartocdn.com" />
 
     <!-- ── Primary SEO ───────────────────────────────────────────────────── -->
     <title>AeroWind Tracker — Real-Time Aviation Weather Map & AI Hazard Intelligence</title>
@@ -14,38 +25,50 @@
     <link rel="canonical" href="https://aerowindtracker.vercel.app/" />
 
     <!-- ── Open Graph ────────────────────────────────────────────────────── -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AeroWind Tracker" />
-    <meta property="og:title" content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="AeroWind Tracker" />
+    <meta property="og:title"       content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
     <meta property="og:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI-synthesized pilot briefings for every US airport — updated every 5 minutes." />
-    <meta property="og:url" content="https://aerowindtracker.vercel.app/" />
-    <meta property="og:image" content="https://aerowindtracker.vercel.app/og-image.png" />
-    <meta property="og:image:width" content="1200" />
+    <meta property="og:url"         content="https://aerowindtracker.vercel.app/" />
+    <meta property="og:image"       content="https://aerowindtracker.vercel.app/og-image.png" />
+    <meta property="og:image:width"  content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="AeroWind Tracker — interactive US aviation weather map with wind barbs and AI hazard overlays" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:image:alt"   content="AeroWind Tracker — interactive US aviation weather map with wind barbs and AI hazard overlays" />
+    <meta property="og:locale"      content="en_US" />
 
     <!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@aerowindtracker" />
-    <meta name="twitter:title" content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@aerowindtracker" />
+    <meta name="twitter:creator"     content="@aerowindtracker" />
+    <meta name="twitter:title"       content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
     <meta name="twitter:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI pilot briefings for every US airport. Updated every 5 minutes." />
-    <meta name="twitter:image" content="https://aerowindtracker.vercel.app/og-image.png" />
-    <meta name="twitter:image:alt" content="AeroWind Tracker aviation weather map" />
+    <meta name="twitter:image"       content="https://aerowindtracker.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt"   content="AeroWind Tracker aviation weather map" />
 
     <!-- ── PWA / Mobile ─────────────────────────────────────────────────── -->
-    <meta name="application-name" content="AeroWind Tracker" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="application-name"                  content="AeroWind Tracker" />
+    <meta name="mobile-web-app-capable"            content="yes" />
+    <meta name="apple-mobile-web-app-capable"      content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="AeroWind" />
+    <meta name="apple-mobile-web-app-title"        content="AeroWind" />
     <link rel="manifest" href="/manifest.json" />
 
     <!-- ── Favicon ──────────────────────────────────────────────────────── -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- ── Structured Data — Organization ───────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AeroWind Tracker",
+      "url": "https://aerowindtracker.vercel.app/",
+      "logo": "https://aerowindtracker.vercel.app/favicon.svg",
+      "sameAs": [],
+      "description": "Building intelligent aviation weather tools for pilots."
+    }
+    </script>
 
     <!-- ── Structured Data — WebApplication ─────────────────────────────── -->
     <script type="application/ld+json">
@@ -56,12 +79,24 @@
       "url": "https://aerowindtracker.vercel.app/",
       "description": "Real-time aviation weather map for US pilots featuring live METAR wind data, radar overlays, AI-powered wind shear detection, IFR hazard alerts, icing risk zones, and Gemini-synthesized flight briefings.",
       "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "Weather Application",
       "operatingSystem": "Web",
+      "inLanguage": "en-US",
       "browserRequirements": "Requires JavaScript. Works in all modern browsers.",
+      "datePublished": "2025-01-01",
+      "dateModified": "2026-03-25",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://aerowindtracker.vercel.app/?q={airport_icao}"
+        },
+        "query-input": "required name=airport_icao"
       },
       "featureList": [
         "Real-time METAR weather data",
@@ -88,6 +123,8 @@
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
+      "datePublished": "2025-01-01",
+      "dateModified": "2026-03-25",
       "mainEntity": [
         {
           "@type": "Question",
@@ -119,6 +156,22 @@
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Yes, AeroWind Tracker is completely free and requires no account or login."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What airports does AeroWind Tracker cover?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AeroWind Tracker covers all METAR-reporting airports across the continental United States, including major international airports, regional airports, and general aviation fields."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can AeroWind Tracker detect wind shear?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The WindAgent automatically analyzes adjacent METAR stations and flags wind shear corridors where speed differences exceed 15 knots or directional shifts exceed 45 degrees between nearby airports."
           }
         }
       ]

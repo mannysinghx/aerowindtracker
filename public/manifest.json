@@ -3,10 +3,13 @@
   "short_name": "AeroWind",
   "description": "Real-time aviation weather map with AI hazard intelligence for US pilots.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "landscape",
+  "lang": "en-US",
   "background_color": "#0a1122",
   "theme_color": "#0a1122",
+  "prefer_related_applications": false,
   "categories": ["utilities", "navigation", "weather"],
   "icons": [
     {
@@ -14,11 +17,6 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
     },
     {
       "src": "/apple-touch-icon.png",
@@ -32,6 +30,22 @@
       "sizes": "1200x630",
       "type": "image/png",
       "label": "AeroWind Tracker aviation weather map"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Airport",
+      "short_name": "Search",
+      "description": "Look up weather at a specific airport",
+      "url": "/?focus=search",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Agent Intelligence",
+      "short_name": "AI Agents",
+      "description": "View live AI hazard analysis",
+      "url": "/?agents=open",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }
   ]
 }
