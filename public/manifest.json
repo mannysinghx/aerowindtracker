@@ -1,0 +1,37 @@
+{
+  "name": "AeroWind Tracker",
+  "short_name": "AeroWind",
+  "description": "Real-time aviation weather map with AI hazard intelligence for US pilots.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a1122",
+  "theme_color": "#0a1122",
+  "categories": ["utilities", "navigation", "weather"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "AeroWind Tracker aviation weather map"
+    }
+  ]
+}
