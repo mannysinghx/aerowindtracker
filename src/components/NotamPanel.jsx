@@ -82,6 +82,7 @@ export default function NotamPanel({ notamData, loading, theme }) {
     <div
       className="glass-panel ui-element"
       style={{
+        width: '320px',
         background: panelBg,
         border: `1px solid ${borderColor}`,
         borderRadius: '12px',

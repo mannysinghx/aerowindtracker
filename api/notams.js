@@ -110,8 +110,10 @@ export default async function handler(req, res) {
     const faaData = await fetchNotamsFromFAA(icao);
     const rawList = faaData?.notamList || [];
 
+    const stripHtml = s => s.replace(/<[^>]*>/g, '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+
     const notams = rawList.map((n, i) => {
-      const text = n.notamDescription || n.icaoMessage || n.traditionalMessage || '';
+      const text = stripHtml(n.notamDescription || n.icaoMessage || n.traditionalMessage || '');
       const keyword = n.keyword || n.classification || '';
       return {
         id: n.id || `NOTAM-${i}`,

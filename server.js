@@ -644,8 +644,9 @@ app.get('/api/notams', async (req, res) => {
             body: body.toString(),
         });
         const faaData = faaRes.ok ? await faaRes.json() : { notamList: [] };
+        const stripHtml = s => s.replace(/<[^>]*>/g, '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
         const notams = (faaData.notamList || []).map((n, i) => {
-            const text = n.notamDescription || n.icaoMessage || n.traditionalMessage || '';
+            const text = stripHtml(n.notamDescription || n.icaoMessage || n.traditionalMessage || '');
             const keyword = n.keyword || n.classification || '';
             return { id: n.id || `NOTAM-${i}`, category: categorise(keyword, text), keyword: keyword.toUpperCase(), text: text.trim(), location: n.icaoLocation || icao, effectiveStart: n.effectiveStart || null, effectiveEnd: n.effectiveEnd || null };
         }).filter(n => n.text.length > 0);
