@@ -564,7 +564,7 @@ function App() {
               const he_y = 16 - distOffset * Math.cos(rad);
 
               const fontStack = "Arial, sans-serif";
-              const textStyle = `text-decoration: none !important; user-select: none; ${tShadow}`; // Eradicate phantom browser underlines 
+              const textStyle = `text-decoration: none; -webkit-user-select: none; user-select: none; ${tShadow}`;
 
               if (le_label) {
                 runwaysSvg += `<text x="${le_x}" y="${le_y}" fill="${textColor}" font-size="${runwayFontSize}" font-family="${fontStack}" font-weight="bold" text-anchor="middle" dominant-baseline="central" style="${textStyle}">${le_label}</text>`;
@@ -643,123 +643,119 @@ function App() {
             setIsMobileMenuOpen={setIsMobileMenuOpen} 
           />
         )}
-        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end', width: '100%', padding: '0 20px', paddingRight: isMobile ? '80px' : '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div className="brand glass-pill" style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-                {loading ? 'Agent Syncing...' : `LIVE AUTONOMOUS FEED • LAST SYNC: ${lastUpdated || 'N/A'}`}
+        {/* ── Top Navigation Bar ── */}
+        <header className="app-topbar ui-element" style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '56px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', zIndex: 2000, pointerEvents: 'none',
+          background: theme === 'dark'
+            ? 'linear-gradient(to bottom, rgba(10,17,34,0.92) 0%, rgba(10,17,34,0.6) 70%, transparent 100%)'
+            : 'linear-gradient(to bottom, rgba(241,245,249,0.97) 0%, rgba(241,245,249,0.7) 70%, transparent 100%)',
+          borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
+        }}>
+          {/* Left: Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0 }}>
+            <Wind size={18} color="var(--accent-color)" style={{ animation: 'float 3s ease-in-out infinite' }} />
+            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
+            <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
+          </div>
+
+          {/* Center: Search */}
+          <div className={`glass-panel ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            width: isMobile ? 'calc(100% - 260px)' : '300px',
+            padding: '7px 12px', borderRadius: '10px', pointerEvents: 'auto', zIndex: 1,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Search size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              <input
+                type="text"
+                placeholder="Search airport (e.g. KSEA)"
+                value={searchTerm}
+                onChange={handleSearch}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.85rem' }}
+              />
+            </div>
+            {searchResults.length > 0 && (
+              <div style={{ marginTop: '8px', borderTop: '1px solid var(--panel-border)', paddingTop: '4px', maxHeight: '240px', overflowY: 'auto' }}>
+                {searchResults.map(res => (
+                  <div key={res.id} onClick={() => selectAirport(res)} className="hover-glow"
+                    style={{ padding: '7px 8px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
+                    onMouseOver={e => e.currentTarget.style.background = theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{res.id}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.name}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Sync status + Theme toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0, paddingRight: isMobile ? '52px' : '0' }}>
+            <div className="glass-pill" style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <RefreshCw size={11} className={loading ? 'spin' : ''} style={{ color: loading ? 'var(--accent-color)' : 'var(--text-secondary)' }} />
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                {loading ? 'Syncing...' : `Sync: ${lastUpdated || 'N/A'}`}
               </span>
             </div>
-            <button 
-              className="glass-pill hover-scale" 
-              onClick={toggleTheme} 
+            <button className="glass-pill hover-scale" onClick={toggleTheme}
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
-              style={{ padding: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
-            >
-               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}>
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
           </div>
         </header>
 
-        <div className={`search-container ui-element glass-panel ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: isMobile ? 'calc(100% - 130px)' : '300px', padding: '10px', borderRadius: '12px', zIndex: 1000, marginLeft: isMobile ? '-30px' : '0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Search size={18} color="#94a3b8" />
-            <input
-              type="text"
-              placeholder="Search airport (e.g. KSEA, Seattle)"
-              value={searchTerm}
-              onChange={handleSearch}
-              style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none' }}
-            />
-          </div>
-          {searchResults.length > 0 && (
-            <div className="search-results" style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '5px', maxHeight: '250px', overflowY: 'auto' }}>
-              {searchResults.map(res => (
-                <div
-                  key={res.id}
-                  onClick={() => selectAirport(res)}
-                  style={{ padding: '8px', cursor: 'pointer', borderRadius: '4px', transition: 'background 0.2s' }}
-                  className="hover-glow"
-                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <div style={{ fontWeight: 'bold' }}>{res.id}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.name}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+        {/* ── Right Controls Panel ── */}
         <div className={`right-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`}>
-          <div className="altitude-control ui-element">
-            <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.5rem 1rem', marginBottom: '1rem', borderRadius: '20px', textAlign: 'center' }}>
-              Altitude
-            </div>
-            <div className="altitude-steps">
-              {ALTITUDES.map((alt) => (
-                <div
-                  key={alt.level}
-                  className={`altitude-step ${altitude === alt.level ? 'active' : ''}`}
-                  onClick={() => setAltitude(alt.level)}
-                  title={alt.label}
-                >
-                  {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
-                </div>
-              ))}
-            </div>
-          </div>
+          <div className="glass-panel ui-element" style={{ padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
 
-          <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-            <div className="runway-control ui-element" style={{ padding: '0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px', textAlign: 'center' }}>
-                Runway Labels
-              </div>
-              <div className="altitude-steps" style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
-                <div
-                  className="altitude-step"
-                  onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))}
-                  style={{ fontWeight: 'bold' }}
-                >A-</div>
-                <div className="altitude-step" style={{ background: 'var(--panel-bg)', cursor: 'default' }}>{runwayFontSize}px</div>
-                <div
-                  className="altitude-step"
-                  onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))}
-                  style={{ fontWeight: 'bold' }}
-                >A+</div>
+            {/* Altitude */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>ALT</span>
+              <div className="altitude-steps">
+                {ALTITUDES.map((alt) => (
+                  <div key={alt.level} className={`altitude-step ${altitude === alt.level ? 'active' : ''}`}
+                    onClick={() => setAltitude(alt.level)} title={alt.label}>
+                    {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="map-style-control ui-element" style={{ padding: '0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px', textAlign: 'center' }}>
-                Base Map
-              </div>
-              <div className="altitude-steps map-style-steps" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+
+            {/* Base Map */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>MAP</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
                 {Object.keys(MAP_STYLES).map(key => (
-                  <div
-                    key={key}
-                    className={`altitude-step ${mapStyleKey === key ? 'active' : ''}`}
+                  <div key={key} className={`altitude-step ${mapStyleKey === key ? 'active' : ''}`}
                     onClick={() => { setMapStyleKey(key); setTheme(key === 'light' ? 'light' : 'dark'); }}
-                    style={{ fontSize: '0.7rem', padding: '0.3rem' }}
-                  >
+                    style={{ fontSize: '0.62rem', width: '36px', height: '30px', borderRadius: '7px' }}>
                     {MAP_STYLES[key].name}
                   </div>
                 ))}
               </div>
             </div>
+
+            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+
+            {/* Runway Label Size */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>RWY</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                <div className="altitude-step" onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))} title="Increase label size" style={{ fontWeight: 700, fontSize: '0.8rem' }}>A+</div>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 500, minWidth: '30px', textAlign: 'center' }}>{runwayFontSize}px</span>
+                <div className="altitude-step" onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))} title="Decrease label size" style={{ fontWeight: 700, fontSize: '0.8rem' }}>A-</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 40px)' }}>
-          {/* Main App Title - Halved Size & Left-Aligned */}
-          <div className="glass-panel ui-element" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', pointerEvents: 'auto', alignSelf: 'flex-start', border: '1px solid var(--panel-border)', borderRadius: '12px', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
-            <Wind className="brand-icon" size={16} color="var(--accent-color)" />
-            <h1 className="text-base font-bold" style={{ color: 'var(--text-primary)', marginLeft: '8px', letterSpacing: '0.5px' }}>AeroWind Tracker</h1>
-            <span style={{ background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '0.55rem', fontWeight: 'bold', marginLeft: '8px', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-               BETA - Experimental
-            </span>
-          </div>
+        <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }}>
 
           {/* AI Agent Alerts Sidebar - ON TOP */}
           {alertFeed.length > 0 && (
@@ -924,7 +920,7 @@ function App() {
         {/* Permanent Aviation Disclaimer Overlay */}
 
         {disclaimerVisible && (
-          <div className="disclaimer-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="disclaimer-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="disclaimer-banner glass-panel ui-element" style={{ width: '90%', maxWidth: '650px', padding: '30px 40px', display: 'flex', flexDirection: 'column', gap: '20px', borderTop: '4px solid #ef4444', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)', boxShadow: '0 25px 60px rgba(0,0,0,0.8)', borderRadius: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#ef4444', justifyContent: 'center', marginBottom: '5px' }}>
                 <AlertTriangle size={36} />

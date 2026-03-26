@@ -113,31 +113,42 @@ async function fetchAllData() {
         const aloftRaw = await fetch('https://aviationweather.gov/api/data/windtemp?region=all&level=low&fcst=06&format=raw').then(r => r.text()).catch(() => "");
         
         const aloft = [];
+        const parseLvl = (str) => {
+            if (!str || str.length < 4) return null;
+            let dir = parseInt(str.substring(0, 2)) * 10;
+            let spd = parseInt(str.substring(2, 4));
+            if (isNaN(dir) || isNaN(spd)) return null;
+            if (dir >= 500) { dir -= 500; spd += 100; }
+            let t = null;
+            if (str.length >= 6) {
+                const sign = str[4];
+                const digits = str.substring(5, 7);
+                if (sign === '+' || sign === '-') {
+                    t = parseInt(digits);
+                    if (!isNaN(t) && sign === '-') t = -t;
+                } else {
+                    // 18000ft+ entries have no sign; temps implicitly negative
+                    t = -Math.abs(parseInt(str.substring(4, 6)));
+                }
+            }
+            return { windDir: dir, windSpeed: spd, temp: t };
+        };
         const lines = aloftRaw.split('\n');
         for (const line of lines) {
-             if (line.trim().length > 30 && !line.includes('FT') && !line.includes('VALID')) {
-                const icaoId = line.substring(0, 3).trim();
-                const parseLvl = (str) => {
-                    const s = str.trim();
-                    if (!s || s.length < 4) return null;
-                    let dir = parseInt(s.substring(0, 2)) * 10;
-                    let spd = parseInt(s.substring(2, 4));
-                    if (dir >= 500) { dir -= 500; spd += 100; }
-                    let t = s.length >= 6 ? parseInt(s.substring(4, 6)) : null;
-                    if (t !== null && s.includes('-')) t = -t;
-                    return { windDir: dir, windSpeed: spd, temp: t };
-                }
+            const parts = line.trim().split(/\s+/);
+            // Valid data lines: station ID (3 alpha chars) + at least 5 level entries
+            if (parts.length >= 6 && /^[A-Z]{3}$/.test(parts[0])) {
                 aloft.push({
-                   icaoId: 'K' + icaoId,
-                   levels: {
-                       '3k': parseLvl(line.substring(4, 9)),
-                       '6k': parseLvl(line.substring(9, 17)),
-                       '9k': parseLvl(line.substring(17, 24)),
-                       '12k': parseLvl(line.substring(24, 31)),
-                       '18k': parseLvl(line.substring(31, 38))
-                   }
+                    icaoId: 'K' + parts[0],
+                    levels: {
+                        '3k':  parseLvl(parts[1]),
+                        '6k':  parseLvl(parts[2]),
+                        '9k':  parseLvl(parts[3]),
+                        '12k': parseLvl(parts[4]),
+                        '18k': parseLvl(parts[5])
+                    }
                 });
-             }
+            }
         }
 
         const alerts = await generateAIAlerts(uniqueGround);

@@ -24,9 +24,27 @@
   box-shadow: 0 0 15px #3b82f6;
 }
 
+@-webkit-keyframes pulse-ring {
+  0% { -webkit-transform: scale(0.3); transform: scale(0.3); opacity: 1; border-width: 4px; }
+  100% { -webkit-transform: scale(3.5); transform: scale(3.5); opacity: 0; border-width: 1px; }
+}
 @keyframes pulse-ring {
-  0% { transform: scale(0.3); opacity: 1; border-width: 4px; }
-  100% { transform: scale(3.5); opacity: 0; border-width: 1px; }
+  0% { -webkit-transform: scale(0.3); transform: scale(0.3); opacity: 1; border-width: 4px; }
+  100% { -webkit-transform: scale(3.5); transform: scale(3.5); opacity: 0; border-width: 1px; }
+}
+
+@-webkit-keyframes spin {
+  from { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+  to   { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+@keyframes spin {
+  from { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+  to   { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+.spin {
+  -webkit-animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 /* Leaflet Attribution control styling for dark mode */
@@ -34,6 +52,7 @@
   background: var(--panel-bg) !important;
   color: var(--text-secondary) !important;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 4px 0 0 0;
 }
 .leaflet-control-attribution a {
@@ -77,21 +96,23 @@
   animation: float 3s ease-in-out infinite;
 }
 
+@-webkit-keyframes float {
+  0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
+  50% { -webkit-transform: translateY(-3px); transform: translateY(-3px); }
+}
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
+  50% { -webkit-transform: translateY(-3px); transform: translateY(-3px); }
 }
 
-/* Altitude Slider Container */
+/* Right Controls Panel */
 .right-controls {
   position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 16px;
+  top: 66px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
   z-index: 1000;
 }
 
@@ -130,10 +151,14 @@
   border-radius: 50%;
   background: var(--bg-color);
   border: 2px solid var(--panel-border);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   cursor: pointer;
+  -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   font-weight: 600;
   color: var(--text-secondary);
@@ -142,6 +167,7 @@
 .altitude-step:hover {
   border-color: var(--accent-hover);
   color: var(--text-primary);
+  -webkit-transform: scale(1.1);
   transform: scale(1.1);
 }
 
@@ -150,19 +176,31 @@
   border-color: var(--text-primary);
   color: white;
   box-shadow: 0 0 15px var(--accent-glow);
+  -webkit-transform: scale(1.2);
   transform: scale(1.2);
 }
 
 /* Info Panel */
 .info-panel {
   width: 320px;
+  -webkit-transition: -webkit-transform 0.3s ease, opacity 0.3s ease;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .info-panel.hidden {
+  -webkit-transform: translateY(20px);
   transform: translateY(20px);
   opacity: 0;
   pointer-events: none;
+}
+
+/* Hide left-controls scrollbar — it appears as a white bar over the map */
+.left-controls {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.left-controls::-webkit-scrollbar {
+  display: none;
 }
 
 .info-header {
@@ -219,6 +257,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .left-controls, .right-controls, .search-container {
+    -webkit-transition: -webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease !important;
   }
   .mobile-hidden {
@@ -226,29 +265,35 @@
     opacity: 0 !important;
   }
   .search-container.mobile-hidden {
+    -webkit-transform: translate(-50%, -20px) scale(0.95) !important;
     transform: translate(-50%, -20px) scale(0.95) !important;
   }
   .left-controls.mobile-hidden {
+    -webkit-transform: translateY(-20px) scale(0.95);
     transform: translateY(-20px) scale(0.95);
   }
   .right-controls.mobile-hidden {
-    transform: translateY(-50%) translateX(150%) !important;
+    -webkit-transform: translateX(150%) !important;
+    transform: translateX(150%) !important;
   }
 
   .info-panel {
-    position: fixed !important;
+    /* Use absolute (not fixed) — Safari clips position:fixed inside overflow:hidden body */
+    position: absolute !important;
     bottom: 0 !important;
     left: 0 !important;
     top: auto !important;
+    -webkit-transform: none !important;
     transform: none !important;
     width: 100% !important;
     border-radius: 20px 20px 0 0 !important;
     max-height: 70vh !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
     z-index: 4000 !important;
     box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
   }
-  
+
   .chat-copilot-widget {
     bottom: 0 !important;
     left: 0 !important;
