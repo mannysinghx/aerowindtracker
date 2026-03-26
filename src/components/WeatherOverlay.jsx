@@ -205,6 +205,8 @@ export function WeatherOverlayLayer({ config }) {
         url={`https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/2/1_1.png`}
         opacity={opacity}
         tileSize={256}
+        maxNativeZoom={12}
+        maxZoom={20}
         zIndex={6}
         attribution='<a href="https://rainviewer.com" target="_blank">RainViewer</a>'
       />
@@ -223,6 +225,8 @@ export function WeatherOverlayLayer({ config }) {
         transparent={true}
         version="1.3.0"
         opacity={opacity}
+        maxNativeZoom={9}
+        maxZoom={20}
         zIndex={6}
         attribution='<a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs" target="_blank">NASA GIBS</a>'
       />
