@@ -924,18 +924,36 @@ function App() {
               <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>AeroGuard AI Alerts</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {alertFeed.map((alert, idx) => (
-                <div key={idx} style={{
-                  background: theme === 'dark' ? 'rgba(30,41,59,0.6)' : 'rgba(241,245,249,0.8)',
-                  borderLeft: `3px solid ${alert.severity === 'HIGH' ? '#ef4444' : alert.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'}`,
-                  padding: '10px', borderRadius: '4px', fontSize: '0.85rem', lineHeight: '1.4',
-                }}>
-                  <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                    {alert.type} @ {alert.location}
-                  </span>
-                  <span style={{ color: 'var(--text-secondary)' }}>{alert.message}</span>
-                </div>
-              ))}
+              {alertFeed.map((alert, idx) => {
+                const locStation = alert.location !== 'GLOBAL'
+                  ? (stations.find(s => s.icaoId === alert.location) || allAirports.find(a => a.id === alert.location))
+                  : null;
+                const clickable = !!locStation;
+                return (
+                  <div key={idx}
+                    onClick={() => {
+                      if (!locStation) return;
+                      setSearchTarget([locStation.lat, locStation.lon]);
+                      setAltitude('3k');
+                    }}
+                    style={{
+                      background: theme === 'dark' ? 'rgba(30,41,59,0.6)' : 'rgba(241,245,249,0.8)',
+                      borderLeft: `3px solid ${alert.severity === 'HIGH' ? '#ef4444' : alert.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'}`,
+                      padding: '10px', borderRadius: '4px', fontSize: '0.85rem', lineHeight: '1.4',
+                      cursor: clickable ? 'pointer' : 'default',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if (clickable) e.currentTarget.style.background = theme === 'dark' ? 'rgba(56,189,248,0.08)' : 'rgba(14,165,233,0.07)'; }}
+                    onMouseLeave={e => { if (clickable) e.currentTarget.style.background = theme === 'dark' ? 'rgba(30,41,59,0.6)' : 'rgba(241,245,249,0.8)'; }}
+                  >
+                    <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                      {alert.type} @ {alert.location}
+                      {clickable && <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', marginLeft: '6px', fontWeight: 500 }}>→ zoom</span>}
+                    </span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{alert.message}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
