@@ -207,6 +207,7 @@ export function WeatherOverlayLayer({ config }) {
         tileSize={256}
         maxNativeZoom={12}
         maxZoom={20}
+        bounds={[[20, -126], [50, -63]]}
         zIndex={6}
         attribution='<a href="https://rainviewer.com" target="_blank">RainViewer</a>'
       />
