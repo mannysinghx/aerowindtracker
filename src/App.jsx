@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu } from 'lucide-react';
+import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
 import './App.css';
@@ -117,6 +118,10 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Responsive UI state
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchTarget, setSearchTarget] = useState(null);
@@ -212,6 +217,13 @@ function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Handle responsive auto-toggle
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(t => {
@@ -625,7 +637,13 @@ function App() {
       </MapContainer>
 
       <div className="overlay-ui">
-        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end', width: '100%', padding: '0 20px' }}>
+        {isMobile && (
+          <MobileToggleBtn 
+            isMobileMenuOpen={isMobileMenuOpen} 
+            setIsMobileMenuOpen={setIsMobileMenuOpen} 
+          />
+        )}
+        <header className="app-header ui-element" style={{ height: '80px', pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end', width: '100%', padding: '0 20px', paddingRight: isMobile ? '80px' : '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div className="brand glass-pill" style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ color: loading ? '#3b82f6' : 'var(--text-secondary)' }} />
@@ -644,7 +662,7 @@ function App() {
           </div>
         </header>
 
-        <div className="search-container ui-element glass-panel" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: '300px', padding: '10px', borderRadius: '12px', zIndex: 1000 }}>
+        <div className={`search-container ui-element glass-panel ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', width: isMobile ? 'calc(100% - 130px)' : '300px', padding: '10px', borderRadius: '12px', zIndex: 1000, marginLeft: isMobile ? '-30px' : '0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Search size={18} color="#94a3b8" />
             <input
@@ -674,7 +692,7 @@ function App() {
           )}
         </div>
 
-        <div className="right-controls">
+        <div className={`right-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`}>
           <div className="altitude-control ui-element">
             <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.5rem 1rem', marginBottom: '1rem', borderRadius: '20px', textAlign: 'center' }}>
               Altitude
@@ -733,7 +751,7 @@ function App() {
           </div>
         </div>
 
-        <div className="left-controls" style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 40px)' }}>
+        <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 40px)' }}>
           {/* Main App Title - Halved Size & Left-Aligned */}
           <div className="glass-panel ui-element" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', pointerEvents: 'auto', alignSelf: 'flex-start', border: '1px solid var(--panel-border)', borderRadius: '12px', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
             <Wind className="brand-icon" size={16} color="var(--accent-color)" />
