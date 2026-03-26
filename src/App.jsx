@@ -4,8 +4,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
-import { fetchLiveAIData } from './services/api';
+import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
+import TafTimeline from './components/TafTimeline';
+import NotamPanel from './components/NotamPanel';
 import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
 import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
@@ -178,6 +180,34 @@ function App() {
   // Disclaimer state
   const [disclaimerVisible, setDisclaimerVisible] = useState(true);
   const [trackingLoading, setTrackingLoading] = useState(false);
+
+  // TAF and NOTAM state (fetched per selected airport)
+  const [tafData, setTafData] = useState(null);
+  const [tafLoading, setTafLoading] = useState(false);
+  const [notamData, setNotamData] = useState(null);
+  const [notamLoading, setNotamLoading] = useState(false);
+
+  // Fetch TAF and NOTAMs whenever the selected airport changes
+  useEffect(() => {
+    if (!selectedStation?.id) {
+      setTafData(null);
+      setNotamData(null);
+      return;
+    }
+    const icao = selectedStation.id;
+
+    setTafLoading(true);
+    fetchTaf(icao).then(data => {
+      setTafData(data);
+      setTafLoading(false);
+    });
+
+    setNotamLoading(true);
+    fetchNotams(icao).then(data => {
+      setNotamData(data);
+      setNotamLoading(false);
+    });
+  }, [selectedStation?.id]);
 
   const handleDisclaimerAccept = () => {
     setTrackingLoading(true);
@@ -1118,12 +1148,28 @@ function App() {
           </div>
           
           {selectedStation && (
-             <CrosswindControls 
-                windDir={selectedStation.windDir} 
-                windSpeed={selectedStation.windSpeed} 
-                runwayHeading={activeHeading} 
-                theme={theme} 
+             <CrosswindControls
+                windDir={selectedStation.windDir}
+                windSpeed={selectedStation.windSpeed}
+                runwayHeading={activeHeading}
+                theme={theme}
              />
+          )}
+
+          {selectedStation && (
+            <TafTimeline
+              tafData={tafData}
+              loading={tafLoading}
+              theme={theme}
+            />
+          )}
+
+          {selectedStation && (
+            <NotamPanel
+              notamData={notamData}
+              loading={notamLoading}
+              theme={theme}
+            />
           )}
 
         </div>

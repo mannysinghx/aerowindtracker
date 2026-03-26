@@ -158,6 +158,22 @@ async function fetchMetarDirect() {
   return unique;
 }
 
+export async function fetchTaf(icao) {
+  try {
+    const res = await fetch(`/api/taf?icao=${encodeURIComponent(icao)}`);
+    if (res.ok) return await res.json();
+  } catch { /* server offline */ }
+  return null;
+}
+
+export async function fetchNotams(icao) {
+  try {
+    const res = await fetch(`/api/notams?icao=${encodeURIComponent(icao)}`);
+    if (res.ok) return await res.json();
+  } catch { /* server offline */ }
+  return null;
+}
+
 export async function fetchLiveAIData() {
   // Primary: backend server (AI alerts, PIREP parsing, aloft wind data)
   try {

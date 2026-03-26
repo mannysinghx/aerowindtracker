@@ -574,6 +574,101 @@ Provide expert, concise aviation weather guidance. Always note that official sou
     }
 });
 
+// TAF endpoint — proxies aviationweather.gov
+app.get('/api/taf', async (req, res) => {
+    const icao = (req.query.icao || '').toUpperCase().trim();
+    if (!icao) return res.status(400).json({ error: 'icao required' });
+    try {
+        const url = `https://aviationweather.gov/api/data/taf?ids=${icao}&format=json`;
+        const raw = await fetch(url, { headers: { 'Accept': 'application/json' } })
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+        if (!raw || !Array.isArray(raw) || raw.length === 0)
+            return res.status(404).json({ error: 'No TAF found', icao });
+
+        const taf = raw[0];
+        const periods = (taf.fcsts || []).map(fc => {
+            let ceilingFt = Infinity;
+            if (Array.isArray(fc.clouds)) {
+                for (const l of fc.clouds) {
+                    if ((l.cover === 'BKN' || l.cover === 'OVC') && l.base != null) {
+                        const ft = l.base * 100;
+                        if (ft < ceilingFt) ceilingFt = ft;
+                    }
+                }
+            }
+            let visSM = 10;
+            if (fc.visib != null) { const v = parseFloat(fc.visib); if (!isNaN(v)) visSM = v; }
+            const cat = ceilingFt < 500 || visSM < 1 ? 'LIFR'
+                : ceilingFt < 1000 || visSM < 3 ? 'IFR'
+                : ceilingFt < 3000 || visSM < 5 ? 'MVFR' : 'VFR';
+            return {
+                timeFrom: fc.timeFrom, timeTo: fc.timeTo,
+                type: fc.fcstType || fc.type || 'FM',
+                windDir: fc.wdir ?? null, windSpeed: fc.wspd ?? null, windGust: fc.wgst ?? null,
+                visibility: visSM >= 10 ? '10+' : String(visSM),
+                ceiling: ceilingFt === Infinity ? 'Unlimited' : `${ceilingFt.toLocaleString()} ft`,
+                ceilingFt: ceilingFt === Infinity ? null : ceilingFt,
+                weather: fc.wxString || '',
+                clouds: (fc.clouds || []).map(c => `${c.cover}${c.base != null ? c.base * 100 : ''}`).join(' '),
+                flightCategory: cat,
+            };
+        });
+        res.json({ icao, rawText: taf.rawTAF || '', issueTime: taf.issueTime, validFrom: taf.validTimeFrom, validTo: taf.validTimeTo, forecast: periods, fetchedAt: new Date().toISOString() });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// NOTAM endpoint — proxies FAA NOTAM search + Gemini digest
+app.get('/api/notams', async (req, res) => {
+    const icao = (req.query.icao || '').toUpperCase().trim();
+    if (!icao) return res.status(400).json({ error: 'icao required' });
+
+    function categorise(kw = '', tx = '') {
+        const k = kw.toUpperCase(); const t = tx.toUpperCase();
+        if (/^(RWY|RUNWAY)/.test(k) || /RWY\s+\d/.test(t)) return 'Runway';
+        if (/^(TWY|TAXIWAY|APRON)/.test(k)) return 'Taxiway/Apron';
+        if (/^(NAV|ILS|VOR|VORTAC|NDB|LOC|GP|DME|TACAN)/.test(k)) return 'Navigation';
+        if (/^(COM|ATIS|ASOS|AWOS)/.test(k)) return 'Communications';
+        if (/^(OBST|OBSTACLE|CRANE|TOWER)/.test(k)) return 'Obstacle';
+        if (/^(AIRSPACE|TFR|MOA|SUA|RESTRICTED|WARNING)/.test(k)) return 'Airspace';
+        if (/^(SVC|SERVICE|FUEL|AVGAS|JET)/.test(k)) return 'Services';
+        return 'General';
+    }
+
+    try {
+        const body = new URLSearchParams({ searchType: '0', designatorsForLocation: icao, notamsOnly: 'false', domesticOrInternational: 'Domestic', offset: '0' });
+        const faaRes = await fetch('https://notams.aim.faa.gov/notamSearch/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+            body: body.toString(),
+        });
+        const faaData = faaRes.ok ? await faaRes.json() : { notamList: [] };
+        const notams = (faaData.notamList || []).map((n, i) => {
+            const text = n.notamDescription || n.icaoMessage || n.traditionalMessage || '';
+            const keyword = n.keyword || n.classification || '';
+            return { id: n.id || `NOTAM-${i}`, category: categorise(keyword, text), keyword: keyword.toUpperCase(), text: text.trim(), location: n.icaoLocation || icao, effectiveStart: n.effectiveStart || null, effectiveEnd: n.effectiveEnd || null };
+        }).filter(n => n.text.length > 0);
+
+        let digest = notams.length === 0
+            ? `No active NOTAMs found for ${icao} at this time.`
+            : `${notams.length} NOTAM${notams.length !== 1 ? 's' : ''} active at ${icao}. Review items below.`;
+
+        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MISSING_KEY' && notams.length > 0) {
+            try {
+                const prompt = `You are AeroGuard AI. Summarise these NOTAMs for ${icao} in 1-2 sentences for a departing pilot. Lead with the most critical item (runway closures, TFRs, nav outages). Be concise. No bullets.\n\n${notams.slice(0, 10).map(n => n.text).join('\n')}`;
+                const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+                const result = await model.generateContent(prompt);
+                digest = result.response.text().trim();
+            } catch { /* use fallback digest */ }
+        }
+
+        res.json({ icao, count: notams.length, digest, notams, fetchedAt: new Date().toISOString() });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Static files + React Router fallback
 app.use(express.static(path.join(__dirname, 'dist')));
 app.get('*', (req, res) => {
