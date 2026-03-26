@@ -544,10 +544,57 @@ function App() {
 
             if (point.windDir !== null) {
               const arrowRot = (point.windDir + 180) % 360;
+              const col     = theme === 'dark' ? '#38bdf8' : '#2563eb';
+              const fromCol = '#ffffff'; // bright white for FROM indicator
+              // Coordinate system (before rotation):
+              //   tipY  = "TO" end  (wind travels toward, arrowhead here)
+              //   tailY = "FROM" end (line endpoint inside circle)
+              //   edgeY = circle edge on the FROM side (outside = beyond this)
+              const reach = radRadius - 8;
+              const tipY  = 16 - reach;       // -106  TO end
+              const tailY = 16 + reach;       // 138   FROM end (line end)
+              const edgeY = 16 + radRadius;   // 146   circle edge
+
+              // 6 chevrons evenly from FROM end to TO end, all pointing toward tip (^)
+              const chevYs = [103, 68, 33, -2, -37, -72];
+              const chevrons = chevYs.map(cy =>
+                `<polyline points="9,${cy+9} 16,${cy} 23,${cy+9}"
+                           fill="none" stroke="${col}" stroke-width="2.5"
+                           stroke-linecap="round" stroke-linejoin="round"/>`
+              ).join('');
+
               radialForeground += `<g transform="rotate(${arrowRot} 16 16)" pointer-events="none">
-                               <line x1="16" y1="16" x2="16" y2="${-(radRadius - 22)}" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
-                               <polygon points="16,${-(radRadius - 6)} 25,${-(radRadius - 20)} 7,${-(radRadius - 20)}" fill="#38bdf8" />
-                             </g>`;
+                <!-- Full diameter dotted line -->
+                <line x1="16" y1="${tipY}" x2="16" y2="${tailY}"
+                      stroke="${col}" stroke-width="2" stroke-dasharray="7,5" stroke-linecap="round"/>
+                <!-- TO arrowhead at tip -->
+                <polygon points="16,${tipY} 24,${tipY+16} 8,${tipY+16}" fill="${col}"/>
+                <!-- Chevrons along full line FROM → TO -->
+                ${chevrons}
+                <!-- Bright FROM indicator outside radial circle -->
+                <circle cx="16" cy="${edgeY+20}" r="14"
+                        fill="${fromCol}" fill-opacity="0.12"
+                        stroke="${fromCol}" stroke-width="1.5" stroke-opacity="0.6"/>
+                <polygon points="16,${edgeY+8} 25,${edgeY+28} 7,${edgeY+28}"
+                         fill="${fromCol}"/>
+              </g>`;
+            }
+
+            // Small plane on the active (into-wind) runway
+            if (activeHeading !== null) {
+              const planeCol = theme === 'dark' ? '#fbbf24' : '#f59e0b';
+              const planeShadow = 'rgba(0,0,0,0.7)';
+              // Plane center is 45px toward the active heading from the SVG center (16,16)
+              // The path is a top-down silhouette centered at (0,0) pointing up (nose = negative y)
+              // The le_label for the active runway is in the direction (activeHeading+180°) from
+              // radial centre — i.e. local +y in the rotated group. Translate(0, T) places the
+              // plane at distance T in that direction so it sits just inside the runway numbers.
+              radialForeground += `<g transform="rotate(${activeHeading} 16 16)" pointer-events="none">
+                <g transform="translate(0,55)">
+                  <path d="M0,-9 L3,-3 L10,2 L10,4 L3,1 L3,7 L6,8 L6,9 L0,7 L-6,9 L-6,8 L-3,7 L-3,1 L-10,4 L-10,2 L-3,-3 Z"
+                        fill="${planeCol}" stroke="${planeShadow}" stroke-width="0.8" stroke-linejoin="round"/>
+                </g>
+              </g>`;
             }
           }
 
