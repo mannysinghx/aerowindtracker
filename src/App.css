@@ -1,5 +1,30 @@
 /* This app will use index.css for global utilities and component-specific inline CSS or modules where needed. */
 
+/* ── Alert Ping Marker ── */
+.ping-marker { position: relative; width: 70px; height: 70px; }
+.ping-dot {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239,68,68,0.8);
+  z-index: 10;
+}
+.ping-ring {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  animation: ping-expand 1.8s ease-out infinite;
+  opacity: 0;
+}
+.ping-ring-2 { animation-delay: 0.6s; }
+.ping-ring-3 { animation-delay: 1.2s; }
+@keyframes ping-expand {
+  0%   { width: 14px; height: 14px; opacity: 0.9; }
+  100% { width: 70px; height: 70px; opacity: 0; }
+}
+
 .app-container {
   position: relative;
   width: 100%;

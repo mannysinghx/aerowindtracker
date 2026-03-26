@@ -109,6 +109,21 @@ function MapController({ targetPos }) {
   return null;
 }
 
+function PingMarker({ position }) {
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="ping-marker">
+      <div class="ping-ring"></div>
+      <div class="ping-ring ping-ring-2"></div>
+      <div class="ping-ring ping-ring-3"></div>
+      <div class="ping-dot"></div>
+    </div>`,
+    iconSize: [70, 70],
+    iconAnchor: [35, 35],
+  });
+  return <Marker position={position} icon={icon} interactive={false} />;
+}
+
 function App() {
   const [theme, setTheme] = useState('dark');
   const [showAbout, setShowAbout] = useState(false);
@@ -149,6 +164,7 @@ function App() {
   // Agent Intelligence Dashboard
   const [showAgentsPanel, setShowAgentsPanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [pingTarget, setPingTarget] = useState(null);
   const [agentAlertCount, setAgentAlertCount] = useState(0);
   const [activeFinding, setActiveFinding] = useState(null);
 
@@ -535,6 +551,7 @@ function App() {
         <AgentMapOverlay finding={activeFinding} />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} onMapClick={() => { setShowPireps(false); setSelectedStation(null); }} />
         <MapController targetPos={searchTarget} />
+        {pingTarget && <PingMarker position={pingTarget} />}
         {displayPoints.map((point) => {
           const color = getWindColor(point.windSpeed);
           const rotation = (point.windDir + 180) % 360;
@@ -941,6 +958,8 @@ function App() {
                       if (!loc) return;
                       setSearchTarget([loc.lat, loc.lon]);
                       setAltitude('3k');
+                      setPingTarget([loc.lat, loc.lon]);
+                      setTimeout(() => setPingTarget(null), 4000);
                     }}
                     style={{
                       background: theme === 'dark' ? 'rgba(30,41,59,0.6)' : 'rgba(241,245,249,0.8)',
