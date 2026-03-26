@@ -1158,6 +1158,7 @@ function App() {
 
           {selectedStation && (
             <TafTimeline
+              key={`taf-${selectedStation.id}`}
               tafData={tafData}
               loading={tafLoading}
               theme={theme}
@@ -1166,6 +1167,7 @@ function App() {
 
           {selectedStation && (
             <NotamPanel
+              key={`notam-${selectedStation.id}`}
               notamData={notamData}
               loading={notamLoading}
               theme={theme}
