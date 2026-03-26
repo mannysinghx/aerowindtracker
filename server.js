@@ -145,8 +145,8 @@ function runWindAgent(ground, aloft) {
                     type: 'WIND_SHEAR',
                     severity: (dirDiff > 90 || spdDiff > 25) ? 'HIGH' : 'MEDIUM',
                     message: `Wind shear between ${a.icaoId} (${a.wspd}kt/${a.wdir}°) and ${b.icaoId} (${b.wspd}kt/${b.wdir}°) — ${Math.round(dist)}nm apart, ${Math.round(spdDiff)}kt speed diff, ${Math.round(dirDiff)}° directional shift.`,
-                    lat: (a.lat + b.lat) / 2,
-                    lon: (a.lon + b.lon) / 2,
+                    lat: (a.lat + b.lat) / 2, lon: (a.lon + b.lon) / 2,
+                    fromLat: a.lat, fromLon: a.lon, toLat: b.lat, toLon: b.lon,
                 });
             }
         }

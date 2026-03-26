@@ -8,6 +8,7 @@ import { fetchLiveAIData } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
 import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
 import AgentDashboard from './components/AgentDashboard';
+import AgentMapOverlay from './components/AgentMapOverlay';
 import './App.css';
 
 const ALTITUDES = [
@@ -143,6 +144,7 @@ function App() {
   // Agent Intelligence Dashboard
   const [showAgentsPanel, setShowAgentsPanel] = useState(false);
   const [agentAlertCount, setAgentAlertCount] = useState(0);
+  const [activeFinding, setActiveFinding] = useState(null);
 
   // Poll agent status for the toggle badge (lightweight — just checks count)
   useEffect(() => {
@@ -496,6 +498,7 @@ function App() {
           url={MAP_STYLES[mapStyleKey].url}
         />
         <WeatherOverlayLayer config={wxOverlay} />
+        <AgentMapOverlay finding={activeFinding} />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} onMapClick={() => { setShowPireps(false); setSelectedStation(null); }} />
         <MapController targetPos={searchTarget} />
         {displayPoints.map((point) => {
@@ -868,7 +871,11 @@ function App() {
             position: 'absolute', top: '102px', left: '50%', transform: 'translateX(-50%)',
             zIndex: 1050, pointerEvents: 'auto',
           }}>
-            <AgentDashboard onClose={() => setShowAgentsPanel(false)} />
+            <AgentDashboard
+              onClose={() => { setShowAgentsPanel(false); setActiveFinding(null); }}
+              onFindingSelect={setActiveFinding}
+              activeFindingId={activeFinding?.id}
+            />
           </div>
         )}
 

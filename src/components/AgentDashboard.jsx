@@ -55,7 +55,7 @@ function StatusDot({ status, color }) {
 
 // ─── Agent Card ───────────────────────────────────────────────────────────────
 
-function AgentCard({ agentKey, data }) {
+function AgentCard({ agentKey, data, onFindingSelect, activeFindingId }) {
     const [expanded, setExpanded] = useState(false);
     const meta = AGENT_META[agentKey];
     if (!meta || !data) return null;
@@ -145,14 +145,29 @@ function AgentCard({ agentKey, data }) {
                 <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {data.findings.map((f, i) => {
                         const sev = severityLabel(f.severity);
+                        const hasLocation = f.lat != null || f.fromLat != null;
+                        const isActive = activeFindingId === (f.id || i);
                         return (
-                            <div key={f.id || i} style={{
-                                padding: '8px 10px', borderRadius: '7px',
-                                background: sev.bg, border: `1px solid ${sev.color}30`,
-                            }}>
+                            <div
+                                key={f.id || i}
+                                onClick={() => hasLocation && onFindingSelect?.(isActive ? null : f)}
+                                style={{
+                                    padding: '8px 10px', borderRadius: '7px',
+                                    background: isActive ? `${sev.color}22` : sev.bg,
+                                    border: `1px solid ${isActive ? sev.color : sev.color + '30'}`,
+                                    cursor: hasLocation ? 'pointer' : 'default',
+                                    transition: 'background 0.2s, border-color 0.2s',
+                                    boxShadow: isActive ? `0 0 8px ${sev.color}40` : 'none',
+                                }}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                                     <span style={{ fontSize: '0.55rem', fontWeight: 800, color: sev.color, letterSpacing: '0.5px' }}>{sev.text}</span>
                                     <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{f.type?.replace(/_/g, ' ')}</span>
+                                    {hasLocation && (
+                                        <span style={{ marginLeft: 'auto', fontSize: '0.55rem', color: isActive ? sev.color : 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.3px' }}>
+                                            {isActive ? '● MAP' : '○ MAP'}
+                                        </span>
+                                    )}
                                 </div>
                                 <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-primary)', lineHeight: '1.45' }}>{f.message}</p>
                             </div>
@@ -166,7 +181,7 @@ function AgentCard({ agentKey, data }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-export default function AgentDashboard({ onClose }) {
+export default function AgentDashboard({ onClose, onFindingSelect, activeFindingId }) {
     const [data, setData]       = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError]     = useState(false);
@@ -249,7 +264,7 @@ export default function AgentDashboard({ onClose }) {
                         </div>
                         <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
                             {loading ? 'Connecting to agents…' :
-                             error   ? 'Server unavailable — start node server.js' :
+                             error   ? 'Agent service unavailable' :
                              lastRun ? `Last cycle: ${new Date(lastRun).toLocaleTimeString()}` :
                              'Awaiting first cycle'}
                         </div>
@@ -286,7 +301,7 @@ export default function AgentDashboard({ onClose }) {
                     <div style={{ padding: '20px 16px', textAlign: 'center' }}>
                         <AlertTriangle size={28} color="#f59e0b" style={{ margin: '0 auto 10px', display: 'block' }} />
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: '1.5', margin: 0 }}>
-                            Agent backend offline. Run <code style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '4px' }}>node server.js</code> to enable multi-agent intelligence.
+                            Agent intelligence service is currently unavailable. Check back shortly.
                         </p>
                     </div>
                 )}
@@ -295,7 +310,7 @@ export default function AgentDashboard({ onClose }) {
                 {!loading && !error && data && (
                     <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {Object.entries(AGENT_META).map(([key]) => (
-                            agents[key] && <AgentCard key={key} agentKey={key} data={agents[key]} />
+                            agents[key] && <AgentCard key={key} agentKey={key} data={agents[key]} onFindingSelect={onFindingSelect} activeFindingId={activeFindingId} />
                         ))}
                     </div>
                 )}
