@@ -67,6 +67,8 @@ function generateAIAlerts(ground) {
             id: `WIND-${w.icaoId}-${Date.now()}`,
             type: 'SEVERE_WIND',
             location: w.icaoId,
+            lat: w.lat,
+            lon: w.lon,
             message: `URGENT: AeroGuard AI detected sustained winds of ${w.wspd}kts (gusting ${w.wgst || 'N/A'}kts) at ${w.icaoId}. Microburst or frontal boundary likely.`,
             severity: 'HIGH'
         });
@@ -80,6 +82,8 @@ function generateAIAlerts(ground) {
             id: `FOG-${f.icaoId}-${Date.now()}`,
             type: 'VISIBILITY',
             location: f.icaoId,
+            lat: f.lat,
+            lon: f.lon,
             message: `NOTICE: AeroGuard AI predicts imminent fog formation at ${f.icaoId}. Temp/Dew spread is critical (${f.temp}°C / ${f.dewp}°C) with calm winds.`,
             severity: 'MEDIUM'
         });

@@ -925,15 +925,21 @@ function App() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {alertFeed.map((alert, idx) => {
-                const locStation = alert.location !== 'GLOBAL'
-                  ? (stations.find(s => s.icaoId === alert.location) || allAirports.find(a => a.id === alert.location))
-                  : null;
-                const clickable = !!locStation;
+                // Use lat/lon from alert directly (server-side), or fall back to station lookup
+                const loc = alert.lat != null && alert.lon != null
+                  ? { lat: alert.lat, lon: alert.lon }
+                  : alert.location !== 'GLOBAL'
+                    ? (() => {
+                        const s = stations.find(st => st.icaoId === alert.location);
+                        return s ? { lat: s.lat, lon: s.lon } : null;
+                      })()
+                    : null;
+                const clickable = !!loc;
                 return (
                   <div key={idx}
                     onClick={() => {
-                      if (!locStation) return;
-                      setSearchTarget([locStation.lat, locStation.lon]);
+                      if (!loc) return;
+                      setSearchTarget([loc.lat, loc.lon]);
                       setAltitude('3k');
                     }}
                     style={{
