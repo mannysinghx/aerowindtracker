@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
+import { getTimezoneFromLatLon } from './utils/timezone';
 import CrosswindControls from './components/CrosswindControls';
 import TafTimeline from './components/TafTimeline';
 import NotamPanel from './components/NotamPanel';
@@ -1162,6 +1163,7 @@ function App() {
               tafData={tafData}
               loading={tafLoading}
               theme={theme}
+              timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
             />
           )}
 
@@ -1171,6 +1173,7 @@ function App() {
               notamData={notamData}
               loading={notamLoading}
               theme={theme}
+              timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
             />
           )}
 
