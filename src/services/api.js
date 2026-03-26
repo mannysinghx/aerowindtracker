@@ -95,6 +95,44 @@ async function fetchAloftDirect() {
   }
 }
 
+async function fetchPirepsDirect() {
+  try {
+    const data = await fetch('/wx/api/data/aircraftreport?format=json')
+      .then(r => r.ok ? r.json() : [])
+      .catch(() => []);
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    const severe = data.filter(p => p.rawOb && (
+      p.rawOb.includes('SEV') || p.rawOb.includes('MOD-SEV') || p.rawOb.includes('UUA')
+    )).slice(0, 20);
+
+    return severe
+      .map((p, i) => {
+        const raw = p.rawOb || '';
+        let type = 'OTHER';
+        if (/\/TB/.test(raw)) type = 'TURBULENCE';
+        else if (/\/IC/.test(raw)) type = 'ICING';
+
+        const severity = raw.includes('SEV') ? 'SEVERE' : 'MODERATE';
+        const flMatch = raw.match(/\/FL(\d+)/);
+        const altitude = flMatch ? `FL${flMatch[1]}` : 'Unknown';
+
+        return {
+          id: `PIREP-${i}-${Date.now()}`,
+          type,
+          severity,
+          altitude,
+          lat: p.lat,
+          lon: p.lon,
+          description: raw.length > 120 ? raw.substring(0, 120) + '…' : raw
+        };
+      })
+      .filter(p => p.lat && p.lon);
+  } catch (e) {
+    return [];
+  }
+}
+
 async function fetchMetarDirect() {
   // Use /wx proxy (Vite rewrites to aviationweather.gov server-side, bypassing CORS)
   const promises = BBOXES.map(box =>
@@ -130,12 +168,12 @@ export async function fetchLiveAIData() {
   // This gives wind barbs on the map even without the Express server running
   try {
     console.log("Server unavailable — fetching METAR & WINDTEMP directly from aviationweather.gov");
-    const [ground, aloft] = await Promise.all([fetchMetarDirect(), fetchAloftDirect()]);
+    const [ground, aloft, pireps] = await Promise.all([fetchMetarDirect(), fetchAloftDirect(), fetchPirepsDirect()]);
     return {
       ground,
       aloft,
       alerts: generateAlerts(ground),
-      pireps: [],
+      pireps,
       lastUpdated: new Date().toISOString()
     };
   } catch (e) {

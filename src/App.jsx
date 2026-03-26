@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
+import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
 import './App.css';
 
 const ALTITUDES = [
@@ -129,6 +130,14 @@ function App() {
 
   // Custom user control for runway labels visibility
   const [runwayFontSize, setRunwayFontSize] = useState(16);
+
+  // Wind barb size
+  const [barbSize, setBarbSize] = useState(32);
+
+  // Weather overlay
+  const [wxOverlay, setWxOverlay] = useState({ type: null, altitude: 'FL090', opacity: 0.65 });
+  const [showWeatherPanel, setShowWeatherPanel] = useState(false);
+  const [showAlertsPanel, setShowAlertsPanel] = useState(true);
 
   // Map style state
   const [mapStyleKey, setMapStyleKey] = useState('dark');
@@ -463,6 +472,7 @@ function App() {
           attribution={MAP_STYLES[mapStyleKey].attr}
           url={MAP_STYLES[mapStyleKey].url}
         />
+        <WeatherOverlayLayer config={wxOverlay} />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} onMapClick={() => { setShowPireps(false); setSelectedStation(null); }} />
         <MapController targetPos={searchTarget} />
         {displayPoints.map((point) => {
@@ -576,8 +586,8 @@ function App() {
           }
 
           const svgArrow = `
-            <div style="width: 32px; height: 32px;">
-              <svg width="32" height="32" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
+            <div style="width: ${barbSize}px; height: ${barbSize}px;">
+              <svg width="${barbSize}" height="${barbSize}" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
                 <g style="pointer-events: auto;">
                   ${radialBackdrop}
                   ${runwaysSvg}
@@ -591,8 +601,8 @@ function App() {
           const customIcon = new L.divIcon({
             html: svgArrow,
             className: 'custom-wind-marker',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            iconSize: [barbSize, barbSize],
+            iconAnchor: [barbSize / 2, barbSize / 2]
           });
 
           return (
@@ -707,6 +717,100 @@ function App() {
           </div>
         </header>
 
+        {/* ── Panel Toggle Bar (centered, below header) ── */}
+        <div style={{
+          position: 'absolute', top: '62px', left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: '8px', zIndex: 1100, pointerEvents: 'auto',
+        }}>
+          {/* Weather toggle */}
+          <button
+            onClick={() => setShowWeatherPanel(p => !p)}
+            title="Toggle Weather Overlay panel"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px 4px 8px', borderRadius: '999px',
+              background: showWeatherPanel ? 'var(--accent-color)' : 'var(--panel-bg)',
+              border: `1px solid ${showWeatherPanel ? 'var(--accent-color)' : 'var(--panel-border)'}`,
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              color: showWeatherPanel ? '#fff' : 'var(--text-secondary)',
+              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
+              boxShadow: showWeatherPanel ? '0 0 10px var(--accent-glow)' : 'none',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <CloudRain size={12} />
+            <span>Weather</span>
+            {wxOverlay.type && (
+              <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem' }}>
+                {wxOverlay.type}
+              </span>
+            )}
+            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showWeatherPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
+              <span style={{ position: 'absolute', top: '2px', left: showWeatherPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showWeatherPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+            </span>
+          </button>
+
+          {/* Alerts toggle */}
+          <button
+            onClick={() => setShowAlertsPanel(p => !p)}
+            title="Toggle AI Alerts panel"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px 4px 8px', borderRadius: '999px',
+              background: showAlertsPanel ? 'rgba(239,68,68,0.85)' : 'var(--panel-bg)',
+              border: `1px solid ${showAlertsPanel ? '#ef4444' : 'var(--panel-border)'}`,
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              color: showAlertsPanel ? '#fff' : 'var(--text-secondary)',
+              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
+              boxShadow: showAlertsPanel && alertFeed.length > 0 ? '0 0 10px rgba(239,68,68,0.4)' : 'none',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <AlertTriangle size={12} />
+            <span>Alerts</span>
+            {alertFeed.length > 0 && (
+              <span style={{ background: showAlertsPanel ? 'rgba(255,255,255,0.3)' : '#ef4444', color: '#fff', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem', fontWeight: 800 }}>
+                {alertFeed.length}
+              </span>
+            )}
+            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showAlertsPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
+              <span style={{ position: 'absolute', top: '2px', left: showAlertsPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showAlertsPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+            </span>
+          </button>
+
+          {/* Station Info toggle (only shown when a station is selected) */}
+          {selectedStation && (
+            <button
+              onClick={() => setSelectedStation(null)}
+              title="Close station info"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '4px 10px 4px 8px', borderRadius: '999px',
+                background: 'rgba(99,102,241,0.85)',
+                border: '1px solid #6366f1',
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                color: '#fff',
+                fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Layers size={12} />
+              <span>{selectedStation.id}</span>
+              <X size={10} />
+            </button>
+          )}
+        </div>
+
+        {/* ── Weather Overlay Panel (centered, top) ── */}
+        {showWeatherPanel && (
+          <div style={{
+            position: 'absolute', top: '102px', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1050, pointerEvents: 'auto',
+          }}>
+            <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
+          </div>
+        )}
+
         {/* ── Right Controls Panel ── */}
         <div className={`right-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`}>
           <div className="glass-panel ui-element" style={{ padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
@@ -752,13 +856,40 @@ function App() {
               </div>
             </div>
 
+            {/* Divider */}
+            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+
+            {/* Wind Barb Size */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>WND</span>
+              <input
+                type="range"
+                min={16}
+                max={64}
+                step={4}
+                value={barbSize}
+                onChange={e => setBarbSize(Number(e.target.value))}
+                title="Wind barb size"
+                style={{
+                  writingMode: 'vertical-lr',
+                  direction: 'rtl',
+                  width: '6px',
+                  height: '80px',
+                  cursor: 'pointer',
+                  accentColor: 'var(--accent-color)',
+                  background: 'transparent'
+                }}
+              />
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{barbSize}px</span>
+            </div>
+
           </div>
         </div>
 
         <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }}>
 
           {/* AI Agent Alerts Sidebar - ON TOP */}
-          {alertFeed.length > 0 && (
+          {showAlertsPanel && alertFeed.length > 0 && (
             <div className="alerts-sidebar ui-element glass-panel" style={{ width: '320px', maxHeight: '40vh', overflowY: 'auto', padding: '15px', pointerEvents: 'auto', position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
                 <AlertTriangle size={18} color="#ef4444" />
@@ -828,13 +959,18 @@ function App() {
                 <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9 / 5) + 32)}°F` : 'N/A'}</div>
               </div>
               <div className="stat-item" style={{ gridColumn: '1 / -1', marginTop: '5px' }}>
-                <button 
-                   onClick={(e) => { e.stopPropagation(); setShowPireps(!showPireps); }} 
+                <button
+                   onClick={(e) => { e.stopPropagation(); setShowPireps(!showPireps); }}
                    className="glass-pill hover-scale"
                    style={{ width: '100%', padding: '8px', border: '1px solid #f97316', color: '#f97316', background: showPireps ? 'rgba(249, 115, 22, 0.2)' : 'transparent', cursor: 'pointer', fontWeight: 'bold' }}
                 >
                    {showPireps ? 'Hide Local PIREPs' : 'Show Local PIREPs'}
                 </button>
+                {showPireps && pireps.filter(p => !selectedStation || getDistance(selectedStation.lat, selectedStation.lon, p.lat, p.lon) < 300).length === 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    No severe PIREPs within 300 nm of this station.
+                  </p>
+                )}
               </div>
             </div>
 
