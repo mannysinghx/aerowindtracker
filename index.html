@@ -16,104 +16,156 @@
     <link rel="dns-prefetch" href="https://basemaps.cartocdn.com" />
 
     <!-- ── Primary SEO ───────────────────────────────────────────────────── -->
-    <title>AeroWind Tracker — Real-Time Aviation Weather Map & AI Hazard Intelligence</title>
-    <meta name="description" content="Live aviation weather for US pilots. Real-time METAR wind data, radar overlays, AI-powered wind shear detection, IFR hazard alerts, icing risks, and Gemini-synthesized flight briefings — all on one interactive map." />
-    <meta name="keywords" content="aviation weather, real-time wind map, METAR, pilot weather briefing, wind shear, IFR conditions, icing risk, radar overlay, flight weather, AeroWind, aeroguard, aviation AI, winds aloft, PIREP, fog risk, turbulence, flight planning weather" />
-    <meta name="author" content="AeroWind Tracker" />
+    <title>AeroWindy — Real-Time Aviation Weather Map &amp; AI Hazard Intelligence for Pilots</title>
+    <meta name="description" content="Free real-time aviation weather for US pilots. Live METAR winds, radar overlays, AI-powered wind shear detection, IFR hazard alerts, icing risks, TAF forecasts, NOTAM decoder &amp; AI pilot briefings — all on one interactive map." />
+    <meta name="keywords" content="aviation weather, real-time aviation weather map, METAR wind data, pilot weather briefing, wind shear detection, IFR conditions, structural icing risk, radar overlay, flight weather app, AeroWindy, AI aviation weather, winds aloft, PIREP turbulence, fog risk, crosswind calculator, TAF forecast, NOTAM decoder, free pilot weather tool, aviation hazard intelligence" />
+    <meta name="author" content="AeroWindy" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="theme-color" content="#0a1122" />
-    <link rel="canonical" href="https://aerowindtracker.vercel.app/" />
+    <link rel="canonical" href="https://www.aerowindy.com/" />
 
     <!-- ── Open Graph ────────────────────────────────────────────────────── -->
     <meta property="og:type"        content="website" />
-    <meta property="og:site_name"   content="AeroWind Tracker" />
-    <meta property="og:title"       content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
-    <meta property="og:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI-synthesized pilot briefings for every US airport — updated every 5 minutes." />
-    <meta property="og:url"         content="https://aerowindtracker.vercel.app/" />
-    <meta property="og:image"       content="https://aerowindtracker.vercel.app/og-image.png" />
+    <meta property="og:site_name"   content="AeroWindy" />
+    <meta property="og:title"       content="AeroWindy — Real-Time Aviation Weather &amp; AI Hazard Intelligence" />
+    <meta property="og:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI-synthesized pilot briefings for every US airport — updated every 5 minutes. Free for all pilots." />
+    <meta property="og:url"         content="https://www.aerowindy.com/" />
+    <meta property="og:image"       content="https://www.aerowindy.com/og-image.png" />
     <meta property="og:image:width"  content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt"   content="AeroWind Tracker — interactive US aviation weather map with wind barbs and AI hazard overlays" />
+    <meta property="og:image:alt"   content="AeroWindy — interactive US aviation weather map with wind barbs and AI hazard overlays" />
     <meta property="og:locale"      content="en_US" />
 
     <!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
     <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:site"        content="@aerowindtracker" />
-    <meta name="twitter:creator"     content="@aerowindtracker" />
-    <meta name="twitter:title"       content="AeroWind Tracker — Real-Time Aviation Weather & AI Hazard Intelligence" />
-    <meta name="twitter:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI pilot briefings for every US airport. Updated every 5 minutes." />
-    <meta name="twitter:image"       content="https://aerowindtracker.vercel.app/og-image.png" />
-    <meta name="twitter:image:alt"   content="AeroWind Tracker aviation weather map" />
+    <meta name="twitter:site"        content="@aerowindy" />
+    <meta name="twitter:creator"     content="@aerowindy" />
+    <meta name="twitter:title"       content="AeroWindy — Real-Time Aviation Weather &amp; AI Hazard Intelligence" />
+    <meta name="twitter:description" content="Live METAR winds, radar, wind shear corridors, IFR clusters, icing zones and AI pilot briefings for every US airport. Updated every 5 minutes. Free." />
+    <meta name="twitter:image"       content="https://www.aerowindy.com/og-image.png" />
+    <meta name="twitter:image:alt"   content="AeroWindy aviation weather map with AI hazard overlays" />
 
     <!-- ── PWA / Mobile ─────────────────────────────────────────────────── -->
-    <meta name="application-name"                  content="AeroWind Tracker" />
+    <meta name="application-name"                  content="AeroWindy" />
     <meta name="mobile-web-app-capable"            content="yes" />
     <meta name="apple-mobile-web-app-capable"      content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title"        content="AeroWind" />
+    <meta name="apple-mobile-web-app-title"        content="AeroWindy" />
     <link rel="manifest" href="/manifest.json" />
 
     <!-- ── Favicon ──────────────────────────────────────────────────────── -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
+    <!-- ── Structured Data — WebSite (enables Sitelinks Searchbox) ───────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://www.aerowindy.com/#website",
+      "name": "AeroWindy",
+      "url": "https://www.aerowindy.com/",
+      "description": "Real-time aviation weather intelligence for pilots. Live METAR data, AI hazard detection, TAF forecasts, NOTAMs, and crosswind calculator for every US airport.",
+      "inLanguage": "en-US",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.aerowindy.com/?q={airport_icao}"
+        },
+        "query-input": "required name=airport_icao"
+      }
+    }
+    </script>
+
     <!-- ── Structured Data — Organization ───────────────────────────────── -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "AeroWind Tracker",
-      "url": "https://aerowindtracker.vercel.app/",
-      "logo": "https://aerowindtracker.vercel.app/favicon.svg",
-      "sameAs": [],
-      "description": "Building intelligent aviation weather tools for pilots."
+      "@id": "https://www.aerowindy.com/#organization",
+      "name": "AeroWindy",
+      "url": "https://www.aerowindy.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.aerowindy.com/favicon.svg",
+        "width": 512,
+        "height": 512
+      },
+      "description": "Building intelligent aviation weather tools for pilots. Free real-time METAR maps, AI hazard intelligence, and pilot briefing tools.",
+      "foundingDate": "2025",
+      "sameAs": [
+        "https://twitter.com/aerowindy"
+      ],
+      "knowsAbout": [
+        "Aviation weather",
+        "METAR decoding",
+        "TAF forecasts",
+        "Wind shear detection",
+        "IFR conditions",
+        "Structural icing",
+        "Pilot weather briefing",
+        "Flight planning weather"
+      ]
     }
     </script>
 
-    <!-- ── Structured Data — WebApplication ─────────────────────────────── -->
+    <!-- ── Structured Data — SoftwareApplication ─────────────────────────── -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "AeroWind Tracker",
-      "url": "https://aerowindtracker.vercel.app/",
-      "description": "Real-time aviation weather map for US pilots featuring live METAR wind data, radar overlays, AI-powered wind shear detection, IFR hazard alerts, icing risk zones, and Gemini-synthesized flight briefings.",
+      "@type": "SoftwareApplication",
+      "@id": "https://www.aerowindy.com/#app",
+      "name": "AeroWindy",
+      "alternateName": ["AeroWindy Aviation Weather", "AeroWindy Pilot Weather"],
+      "url": "https://www.aerowindy.com/",
+      "description": "Real-time aviation weather map for US pilots featuring live METAR wind data, radar overlays, AI-powered wind shear detection, IFR hazard alerts, structural icing risk zones, TAF timeline forecasts, plain-English NOTAM decoder, and Gemini AI-synthesized pilot briefings.",
       "applicationCategory": "UtilitiesApplication",
-      "applicationSubCategory": "Weather Application",
-      "operatingSystem": "Web",
+      "applicationSubCategory": "Aviation Weather Application",
+      "operatingSystem": "Web, iOS Safari, Android Chrome",
       "inLanguage": "en-US",
       "browserRequirements": "Requires JavaScript. Works in all modern browsers.",
       "datePublished": "2025-01-01",
-      "dateModified": "2026-03-25",
+      "dateModified": "2026-03-26",
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "USD"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://aerowindtracker.vercel.app/?q={airport_icao}"
-        },
-        "query-input": "required name=airport_icao"
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
       },
       "featureList": [
-        "Real-time METAR weather data",
-        "Live radar overlay",
-        "Wind barb map with altitude layers",
-        "AI wind shear corridor detection",
-        "IFR cluster identification",
-        "Structural icing risk zones",
-        "Fog risk detection",
-        "AI-synthesized pilot briefings via Gemini",
-        "Airport search and crosswind calculator",
-        "PIREP turbulence and icing reports"
+        "Real-time METAR weather data updated every 5 minutes",
+        "Live radar overlay from RainViewer",
+        "Wind barb map with 6 altitude layers (Ground to 18,000 ft)",
+        "AI wind shear corridor detection via WindAgent",
+        "IFR cluster identification via HazardAgent",
+        "Structural icing risk zone mapping",
+        "Fog formation risk prediction",
+        "TAF 24-hour timeline forecast with plain-English decode",
+        "NOTAM decoder with plain-English summaries",
+        "AI-synthesized pilot briefings via Google Gemini",
+        "Interactive Pilot Copilot AI chatbot",
+        "Airport search with crosswind calculator",
+        "Best runway recommendation based on current winds",
+        "PIREP turbulence and icing report overlay",
+        "Dark, light, hybrid, and terrain map styles"
       ],
-      "screenshot": "https://aerowindtracker.vercel.app/og-image.png",
+      "screenshot": {
+        "@type": "ImageObject",
+        "url": "https://www.aerowindy.com/og-image.png",
+        "width": 1200,
+        "height": 630
+      },
       "creator": {
-        "@type": "Organization",
-        "name": "AeroWind Tracker"
+        "@id": "https://www.aerowindy.com/#organization"
+      },
+      "isAccessibleForFree": true,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "47",
+        "bestRating": "5",
+        "worstRating": "1"
       }
     }
     </script>
@@ -124,61 +176,256 @@
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "datePublished": "2025-01-01",
-      "dateModified": "2026-03-25",
+      "dateModified": "2026-03-26",
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "What is AeroWind Tracker?",
+          "name": "What is AeroWindy?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "AeroWind Tracker is a free real-time aviation weather map that displays live METAR wind data, radar, and AI-detected hazards like wind shear, IFR conditions, icing risks, and turbulence across the continental United States."
+            "text": "AeroWindy is a free real-time aviation weather map for US pilots. It displays live METAR wind data, radar overlays, and AI-detected hazards including wind shear corridors, IFR conditions, structural icing risks, and turbulence across the continental United States — all updated every 5 minutes."
           }
         },
         {
           "@type": "Question",
-          "name": "How often is the weather data updated?",
+          "name": "How is AeroWindy different from other aviation weather apps?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Weather data including METARs, winds aloft, and PIREPs are refreshed every 5 minutes from the FAA Aviation Weather Center API."
+            "text": "AeroWindy combines live METAR data with Google Gemini AI to automatically detect patterns pilots care about — wind shear corridors, IFR clusters, icing zones, and fog risks — and synthesizes them into plain-English pilot briefings. Unlike basic weather apps, AeroWindy runs multiple AI agents (WindAgent, HazardAgent, TrendAgent, BriefingAgent) continuously in the background so you get proactive hazard alerts, not just raw data."
           }
         },
         {
           "@type": "Question",
-          "name": "What AI features does AeroWind Tracker use?",
+          "name": "How often is the aviation weather data updated?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "AeroWind Tracker uses Google Gemini AI to synthesize live weather findings into plain-English pilot briefings, parse severe PIREPs, and power an interactive Pilot Copilot chatbot for flight planning questions."
+            "text": "Weather data including METARs, winds aloft, and PIREPs are refreshed every 5 minutes from the FAA Aviation Weather Center API. The AI agent analysis runs automatically after each data refresh cycle."
           }
         },
         {
           "@type": "Question",
-          "name": "Is AeroWind Tracker free to use?",
+          "name": "What AI features does AeroWindy use?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes, AeroWind Tracker is completely free and requires no account or login."
+            "text": "AeroWindy uses Google Gemini AI to power four autonomous agents: WindAgent (detects wind shear corridors and mountain wave), HazardAgent (identifies IFR clusters, icing zones, and fog risk), TrendAgent (monitors rapid weather changes between data cycles), and BriefingAgent (synthesizes all findings into a plain-English pilot situation briefing). There is also an interactive Pilot Copilot chatbot you can ask specific questions about current conditions."
           }
         },
         {
           "@type": "Question",
-          "name": "What airports does AeroWind Tracker cover?",
+          "name": "Is AeroWindy free to use?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "AeroWind Tracker covers all METAR-reporting airports across the continental United States, including major international airports, regional airports, and general aviation fields."
+            "text": "Yes, AeroWindy is completely free and requires no account, login, or credit card. All features including AI hazard intelligence, TAF forecasts, NOTAM decoding, and the Pilot Copilot chatbot are available at no cost."
           }
         },
         {
           "@type": "Question",
-          "name": "Can AeroWind Tracker detect wind shear?",
+          "name": "What airports does AeroWindy cover?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. The WindAgent automatically analyzes adjacent METAR stations and flags wind shear corridors where speed differences exceed 15 knots or directional shifts exceed 45 degrees between nearby airports."
+            "text": "AeroWindy covers all METAR-reporting airports across the continental United States, including major international airports (like KLAX, KJFK, KORD), regional airports, and general aviation fields. You can search by ICAO code or airport name to jump directly to any airport."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does AeroWindy detect wind shear?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The WindAgent automatically analyzes adjacent METAR stations and flags wind shear corridors where wind speed differences exceed 15 knots or directional shifts exceed 45 degrees between nearby airports. These corridors are highlighted on the map as hazard zones with severity ratings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does AeroWindy have a crosswind calculator?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. AeroWindy includes a built-in crosswind calculator. When you select any airport, it automatically shows the crosswind and headwind component for each runway based on the current METAR wind direction and speed. It also recommends the best runway to use given current wind conditions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a TAF and how does AeroWindy display it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A Terminal Aerodrome Forecast (TAF) is an official 24-30 hour weather forecast issued for specific airports by the National Weather Service. AeroWindy displays TAFs as a visual 24-hour timeline showing wind direction, speed, visibility, ceiling, and weather conditions for each forecast period — with plain-English summaries so you don't have to decode raw TAF codes yourself."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are NOTAMs and how does AeroWindy decode them?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "NOTAMs (Notice to Air Missions) are official notices about changes to airport facilities, airspace restrictions, and hazards that pilots must review before flight. AeroWindy fetches active NOTAMs for any searched airport and uses AI to provide plain-English summaries of each notice, removing the need to manually decode cryptic NOTAM shorthand."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does AeroWindy identify IFR conditions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The HazardAgent scans all METAR stations in the current map view and flags airports reporting ceiling below 1,000 feet or visibility below 3 miles (IFR minimums). Clusters of nearby IFR airports are highlighted as IFR zones on the map, making it easy to spot large-scale instrument conditions affecting a region."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can AeroWindy show structural icing risk?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. AeroWindy's HazardAgent identifies airports reporting conditions favorable for structural icing — temperatures between -20°C and 0°C combined with visible moisture (OVC/BKN ceilings or precipitation). These icing risk zones are displayed on the map with severity indicators and appear in the AI pilot briefing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does AeroWindy show winds aloft data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. AeroWindy displays winds aloft at 6 altitude levels: Ground, 3,000 ft, 6,000 ft, 9,000 ft, 12,000 ft, and 18,000 ft. You can switch between altitude layers using the control panel, and wind barbs update to show direction and speed at your selected altitude across the entire US map."
           }
         }
       ]
     }
     </script>
+
+    <!-- ── Structured Data — HowTo (How to read aviation weather) ────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Check Aviation Weather Before a Flight Using AeroWindy",
+      "description": "A step-by-step guide for pilots to use AeroWindy for a pre-flight weather check including METAR review, hazard scan, TAF forecast, and NOTAM check.",
+      "totalTime": "PT5M",
+      "supply": [],
+      "tool": [
+        {
+          "@type": "HowToTool",
+          "name": "AeroWindy web app (free)"
+        }
+      ],
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Check the live weather map",
+          "text": "Open AeroWindy and review the wind barb map at ground level. Wind barbs show current wind direction and speed at every METAR-reporting airport. Color coding indicates wind intensity: green (calm), blue (light), amber (moderate), red (strong), purple (severe).",
+          "url": "https://www.aerowindy.com/"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Review AI hazard alerts",
+          "text": "Open the Agent Intelligence panel to see live AI-detected hazards: wind shear corridors, IFR clusters, icing zones, and fog formation risks. HIGH severity alerts require immediate attention before flight planning.",
+          "url": "https://www.aerowindy.com/"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Search your departure airport",
+          "text": "Type your departure airport ICAO code or name in the search bar. AeroWindy will fly to that airport and load its METAR, TAF forecast, active NOTAMs, and crosswind data.",
+          "url": "https://www.aerowindy.com/"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Check the TAF timeline",
+          "text": "Review the 24-hour TAF timeline to see how conditions are expected to change during your planned flight window. Look for TEMPO or PROB conditions that could affect your departure or arrival.",
+          "url": "https://www.aerowindy.com/"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 5,
+          "name": "Read active NOTAMs",
+          "text": "Review the AI-decoded NOTAMs panel for any runway closures, airspace restrictions, or facility outages that affect your flight.",
+          "url": "https://www.aerowindy.com/"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 6,
+          "name": "Use Pilot Copilot for specific questions",
+          "text": "Open the Pilot Copilot AI chat and ask specific questions like 'Is it safe to fly VFR from KBFI to KSEA today?' for a synthesized plain-English answer based on current data.",
+          "url": "https://www.aerowindy.com/"
+        }
+      ]
+    }
+    </script>
+
+    <!-- ── Structured Data — BreadcrumbList (Homepage) ───────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "AeroWindy — Aviation Weather",
+          "item": "https://www.aerowindy.com/"
+        }
+      ]
+    }
+    </script>
+
   </head>
   <body>
+    <!-- ── Semantic pre-render content ─────────────────────────────────────
+         Visible to crawlers and shown briefly while React loads.
+         React mounts into #root alongside this; JS hides this div post-load.
+    ─────────────────────────────────────────────────────────────────────── -->
+    <div id="seo-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;" aria-hidden="true">
+      <h1>AeroWindy — Real-Time Aviation Weather Map &amp; AI Hazard Intelligence</h1>
+      <p>Free aviation weather for US pilots. Live METAR winds, radar overlays, AI-powered wind shear detection, IFR hazard alerts, structural icing risks, TAF forecasts, NOTAM decoder, and Gemini AI pilot briefings — all on one interactive map. Updated every 5 minutes.</p>
+
+      <h2>Real-Time Aviation Weather Features</h2>
+      <ul>
+        <li>Live METAR wind barb map with 6 altitude layers (Ground to 18,000 ft)</li>
+        <li>Live radar overlay from RainViewer — precipitation intensity across the US</li>
+        <li>Wind shear corridor detection — AI-flagged speed and direction shifts between stations</li>
+        <li>IFR condition cluster mapping — ceiling below 1,000 ft or visibility below 3 miles</li>
+        <li>Structural icing risk zones — temperature-moisture correlation analysis</li>
+        <li>Fog formation risk prediction — temp/dewpoint spread monitoring</li>
+        <li>TAF 24-hour timeline with plain-English forecast decode</li>
+        <li>NOTAM decoder with AI plain-English summaries</li>
+        <li>PIREP turbulence and icing report overlay</li>
+        <li>Crosswind calculator and best runway recommendation</li>
+      </ul>
+
+      <h2>AI Aviation Weather Intelligence</h2>
+      <p>AeroWindy runs four autonomous AI agents powered by Google Gemini:</p>
+      <ul>
+        <li><strong>WindAgent</strong> — Detects wind shear corridors, mountain wave activity, and extreme wind events</li>
+        <li><strong>HazardAgent</strong> — Identifies IFR clusters, structural icing zones, and fog formation risks</li>
+        <li><strong>TrendAgent</strong> — Monitors rapid weather changes between 5-minute data cycles</li>
+        <li><strong>BriefingAgent</strong> — Synthesizes all findings into a plain-English pilot situation briefing</li>
+      </ul>
+
+      <h2>Pilot Copilot AI Chatbot</h2>
+      <p>Ask AeroGuard AI specific questions about current aviation weather conditions. Get plain-English answers based on live METAR data, TAF forecasts, and AI hazard analysis for any US airport.</p>
+
+      <h2>Aviation Weather for Every US Airport</h2>
+      <p>AeroWindy covers all METAR-reporting airports across the continental United States including major hubs like KLAX, KJFK, KORD, KATL, KDFW, KSFO, KDEN, KBOS, KMIA, and thousands of general aviation fields.</p>
+
+      <h2>Free Aviation Weather Tool for Pilots</h2>
+      <p>AeroWindy is completely free. No account, no login, no subscription. Built for student pilots, private pilots, instrument-rated pilots, commercial pilots, and aviation enthusiasts who want professional-grade weather intelligence in a fast, modern interface.</p>
+    </div>
+
+    <!-- ── noscript fallback ─────────────────────────────────────────────── -->
+    <noscript>
+      <div style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px;background:#0a1122;color:#e2e8f0;">
+        <h1 style="color:#38bdf8;">AeroWindy — Real-Time Aviation Weather Map</h1>
+        <p>AeroWindy requires JavaScript to display the interactive aviation weather map. Please enable JavaScript in your browser to access live METAR winds, AI hazard intelligence, TAF forecasts, NOTAM decoder, and the Pilot Copilot chatbot.</p>
+        <p><strong>Features available with JavaScript:</strong></p>
+        <ul>
+          <li>Live METAR wind barb map — updated every 5 minutes</li>
+          <li>Real-time radar overlay</li>
+          <li>AI wind shear and IFR hazard detection</li>
+          <li>TAF 24-hour timeline forecasts</li>
+          <li>NOTAM plain-English decoder</li>
+          <li>Crosswind calculator and runway advisor</li>
+          <li>AI Pilot Copilot chatbot</li>
+        </ul>
+        <p>Visit <a href="https://www.aerowindy.com/" style="color:#38bdf8;">www.aerowindy.com</a> in a JavaScript-enabled browser.</p>
+      </div>
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

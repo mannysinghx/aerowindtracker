@@ -1,7 +1,7 @@
 {
-  "name": "AeroWind Tracker",
-  "short_name": "AeroWind",
-  "description": "Real-time aviation weather map with AI hazard intelligence for US pilots.",
+  "name": "AeroWindy",
+  "short_name": "AeroWindy",
+  "description": "Real-time aviation weather map with AI hazard intelligence for US pilots. Free METAR winds, radar, TAF forecasts, NOTAM decoder, and AI pilot briefings.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -29,21 +29,21 @@
       "src": "/og-image.png",
       "sizes": "1200x630",
       "type": "image/png",
-      "label": "AeroWind Tracker aviation weather map"
+      "label": "AeroWindy — real-time aviation weather map with AI hazard overlays"
     }
   ],
   "shortcuts": [
     {
       "name": "Search Airport",
       "short_name": "Search",
-      "description": "Look up weather at a specific airport",
+      "description": "Look up live weather at any US airport by ICAO code or name",
       "url": "/?focus=search",
       "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     },
     {
-      "name": "Agent Intelligence",
+      "name": "AI Hazard Intelligence",
       "short_name": "AI Agents",
-      "description": "View live AI hazard analysis",
+      "description": "View live AI hazard analysis — wind shear, IFR clusters, icing risks",
       "url": "/?agents=open",
       "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }

@@ -1,5 +1,14 @@
 User-agent: *
 Allow: /
 
+# Block API endpoints — no crawl value, save crawl budget
+Disallow: /api/
+Disallow: /wx/
+
+# Block URL parameters that produce identical content
+Disallow: /*?q=*
+Disallow: /*?focus=*
+Disallow: /*?agents=*
+
 # Sitemap
-Sitemap: https://aerowindtracker.vercel.app/sitemap.xml
+Sitemap: https://www.aerowindy.com/sitemap.xml

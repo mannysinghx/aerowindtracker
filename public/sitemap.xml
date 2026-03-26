@@ -3,10 +3,183 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
           http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- ── Core App ─────────────────────────────────────────────────────── -->
   <url>
-    <loc>https://aerowindtracker.vercel.app/</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://www.aerowindy.com/</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- ── Feature Pages (build these as static routes or landing pages) ── -->
+  <!--
+  <url>
+    <loc>https://www.aerowindy.com/features/live-aviation-weather-map</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/ai-hazard-intelligence</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/crosswind-calculator</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/taf-forecast-timeline</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/notam-decoder</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/wind-shear-detection</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/icing-risk-map</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/pirep-turbulence-map</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/winds-aloft-map</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/features/ai-pilot-briefing</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  -->
+
+  <!-- ── Comparison / Competitor Pages ─────────────────────────────────── -->
+  <!--
+  <url>
+    <loc>https://www.aerowindy.com/vs/foreflight-vs-aerowindy</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/vs/aviationweather-gov-vs-aerowindy</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/vs/skyvector-vs-aerowindy</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  -->
+
+  <!-- ── Blog / Content Hub ─────────────────────────────────────────────── -->
+  <!--
+  <url>
+    <loc>https://www.aerowindy.com/blog</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  -->
+
+  <!-- ── Glossary ───────────────────────────────────────────────────────── -->
+  <!--
+  <url>
+    <loc>https://www.aerowindy.com/glossary</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  -->
+
+  <!-- ── Airport Pages (Programmatic SEO — top 50 US airports) ─────────── -->
+  <!--
+  <url>
+    <loc>https://www.aerowindy.com/airport/KLAX</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KJFK</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KORD</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KATL</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KDFW</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KSFO</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KDEN</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KBOS</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KMIA</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aerowindy.com/airport/KSEA</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  -->
+
 </urlset>

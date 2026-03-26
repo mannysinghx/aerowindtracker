@@ -3,6 +3,14 @@
   "crons": [
     { "path": "/api/refresh", "schedule": "*/5 * * * *" }
   ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "aerowindtracker.vercel.app" }],
+      "destination": "https://www.aerowindy.com/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)",     "destination": "/index.html" }
@@ -11,11 +19,12 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options",  "value": "nosniff" },
-        { "key": "X-Frame-Options",         "value": "SAMEORIGIN" },
-        { "key": "X-XSS-Protection",        "value": "1; mode=block" },
-        { "key": "Referrer-Policy",         "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy",      "value": "geolocation=(), camera=(), microphone=()" }
+        { "key": "X-Content-Type-Options",       "value": "nosniff" },
+        { "key": "X-Frame-Options",              "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection",             "value": "1; mode=block" },
+        { "key": "Referrer-Policy",              "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",           "value": "geolocation=(), camera=(), microphone=()" },
+        { "key": "Strict-Transport-Security",    "value": "max-age=31536000; includeSubDomains; preload" }
       ]
     },
     {
@@ -25,9 +34,30 @@
       ]
     },
     {
-      "source": "/(favicon\\.svg|favicon-.*\\.png|apple-touch-icon\\.png|og-image\\.png|manifest\\.json)",
+      "source": "/(favicon\\.svg|favicon-.*\\.png|apple-touch-icon\\.png|og-image\\.png)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Cache-Control",  "value": "public, max-age=86400, stale-while-revalidate=604800" },
+        { "key": "Content-Type",   "value": "application/manifest+json" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Cache-Control",  "value": "public, max-age=86400, stale-while-revalidate=604800" },
+        { "key": "Content-Type",   "value": "application/xml; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Cache-Control",  "value": "public, max-age=86400" },
+        { "key": "Content-Type",   "value": "text/plain; charset=utf-8" }
       ]
     },
     {
