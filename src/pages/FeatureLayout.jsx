@@ -106,6 +106,7 @@ export default function FeatureLayout({ title, description, children }) {
           <Link to="/features/crosswind-calculator" style={styles.navLink}>Crosswind Calc</Link>
           <Link to="/features/ai-hazard-intelligence" style={styles.navLink}>AI Hazards</Link>
           <Link to="/features/notam-decoder" style={styles.navLink}>NOTAM Decoder</Link>
+          <Link to="/about" style={styles.navLink}>About</Link>
           <a href="/" style={styles.ctaBtn}>Open Live Map →</a>
         </div>
       </nav>

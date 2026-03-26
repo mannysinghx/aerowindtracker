@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
 import { getTimezoneFromLatLon } from './utils/timezone';
@@ -10,6 +10,7 @@ import CrosswindControls from './components/CrosswindControls';
 import TafTimeline from './components/TafTimeline';
 import NotamPanel from './components/NotamPanel';
 import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
+import AboutModal from './components/AboutModal';
 import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
 import './App.css';
@@ -110,6 +111,7 @@ function MapController({ targetPos }) {
 
 function App() {
   const [theme, setTheme] = useState('dark');
+  const [showAbout, setShowAbout] = useState(false);
   const [altitude, setAltitude] = useState('ground');
   const [stations, setStations] = useState([]);
   const [aloftData, setAloftData] = useState([]);
@@ -818,6 +820,11 @@ function App() {
               style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}>
               {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
+            <button className="glass-pill hover-scale" onClick={() => setShowAbout(true)}
+              title="About AeroWindy"
+              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--panel-border)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}>
+              <Info size={15} />
+            </button>
           </div>
         </header>
 
@@ -1262,6 +1269,11 @@ function App() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* ── About Modal ── */}
+        {showAbout && (
+          <AboutModal theme={theme} onClose={() => setShowAbout(false)} />
         )}
       </div>
     </div>
