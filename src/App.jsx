@@ -76,10 +76,11 @@ function getBestRunway(runways, windDir) {
   return bestRunway;
 }
 
-function BoundsTracker({ setBounds, setZoom }) {
+function BoundsTracker({ setBounds, setZoom, onMapClick }) {
   const map = useMapEvents({
     moveend: () => { setBounds(map.getBounds()); setZoom(map.getZoom()); },
     zoomend: () => { setBounds(map.getBounds()); setZoom(map.getZoom()); },
+    click: () => { if (onMapClick) onMapClick(); }
   });
 
   useEffect(() => {
@@ -112,6 +113,7 @@ function App() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [alertFeed, setAlertFeed] = useState([]);
   const [pireps, setPireps] = useState([]);
+  const [showPireps, setShowPireps] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -449,7 +451,7 @@ function App() {
           attribution={MAP_STYLES[mapStyleKey].attr}
           url={MAP_STYLES[mapStyleKey].url}
         />
-        <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
+        <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} onMapClick={() => { setShowPireps(false); setSelectedStation(null); }} />
         <MapController targetPos={searchTarget} />
         {displayPoints.map((point) => {
           const color = getWindColor(point.windSpeed);
@@ -603,7 +605,7 @@ function App() {
             })}
           />
         )}
-        {pireps.map((p, i) => (
+        {showPireps && pireps.filter(p => !selectedStation || getDistance(selectedStation.lat, selectedStation.lon, p.lat, p.lon) < 300).map((p, i) => (
           <Marker
             key={p.id || i}
             position={[p.lat, p.lon]}
@@ -810,6 +812,15 @@ function App() {
               <div className="stat-item">
                 <div className="stat-label"><Droplets size={14} /> Dew Point</div>
                 <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9 / 5) + 32)}°F` : 'N/A'}</div>
+              </div>
+              <div className="stat-item" style={{ gridColumn: '1 / -1', marginTop: '5px' }}>
+                <button 
+                   onClick={(e) => { e.stopPropagation(); setShowPireps(!showPireps); }} 
+                   className="glass-pill hover-scale"
+                   style={{ width: '100%', padding: '8px', border: '1px solid #f97316', color: '#f97316', background: showPireps ? 'rgba(249, 115, 22, 0.2)' : 'transparent', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                   {showPireps ? 'Hide Local PIREPs' : 'Show Local PIREPs'}
+                </button>
               </div>
             </div>
 
