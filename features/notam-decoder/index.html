@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Free NOTAM Decoder for Pilots — Plain-English NOTAM Summaries | AeroWindy</title>
+    <meta name="description" content="Free AI-powered NOTAM decoder for pilots. Search any US airport ICAO code to get active NOTAMs decoded into plain English — no cryptic abbreviations. Free, no account required." />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://www.aerowindy.com/features/notam-decoder" />
+    <meta name="author" content="AeroWindy" />
+    <meta name="theme-color" content="#0a1122" />
+
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="AeroWindy" />
+    <meta property="og:title"       content="Free NOTAM Decoder for Pilots — Plain-English Summaries" />
+    <meta property="og:description" content="AI decodes active NOTAMs into plain English for any US airport. No more cryptic abbreviations — see exactly what matters for your flight." />
+    <meta property="og:url"         content="https://www.aerowindy.com/features/notam-decoder" />
+    <meta property="og:image"       content="https://www.aerowindy.com/api/og?page=notam-decoder" />
+    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale"      content="en_US" />
+
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@aerowindy" />
+    <meta name="twitter:title"       content="Free NOTAM Decoder — AeroWindy" />
+    <meta name="twitter:description" content="AI decodes active NOTAMs into plain English for any US airport. Free, no account needed." />
+    <meta name="twitter:image"       content="https://www.aerowindy.com/api/og?page=notam-decoder" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.aerowindy.com/features/notam-decoder#webpage",
+      "name": "Free NOTAM Decoder for Pilots",
+      "url": "https://www.aerowindy.com/features/notam-decoder",
+      "description": "Free AI-powered NOTAM decoder. Search any US airport to see active NOTAMs translated into plain English.",
+      "isPartOf": { "@id": "https://www.aerowindy.com/#website" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "AeroWindy", "item": "https://www.aerowindy.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Features", "item": "https://www.aerowindy.com/features/" },
+          { "@type": "ListItem", "position": 3, "name": "NOTAM Decoder", "item": "https://www.aerowindy.com/features/notam-decoder" }
+        ]
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is a NOTAM?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A NOTAM (Notice to Air Missions) is an official notice distributed to pilots containing information about changes to the National Airspace System — runway closures, navaid outages, airspace restrictions, crane hazards, parachute operations, and more. Pilots are legally required to review all applicable NOTAMs before every flight." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I read a NOTAM?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Raw NOTAMs use a cryptic format with abbreviations, coordinates, and time codes that require training to interpret quickly. For example: 'NOTAM !SEA 12/001 SEA RWY 16L/34R CLSD 2312121400-2312130600' means Runway 16L/34R at Seattle-Tacoma is closed from Dec 12 14:00 UTC to Dec 13 06:00 UTC. AeroWindy's AI decodes every NOTAM into a plain-English one-sentence summary." }
+        },
+        {
+          "@type": "Question",
+          "name": "Are NOTAMs required for preflight planning?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Under FAR 91.103, pilots in command are required to familiarize themselves with all available information concerning a flight, which includes checking applicable NOTAMs. Failure to review NOTAMs before flight is one of the most common causes of runway incursions, airspace violations, and avoidable accidents." }
+        },
+        {
+          "@type": "Question",
+          "name": "How many NOTAMs are active at a typical airport?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A busy commercial airport like KLAX or KJFK can have 50-100 active NOTAMs at any given time. A general aviation field typically has 5-20. AeroWindy fetches all active NOTAMs for any searched airport and uses AI to prioritize and summarize them so you can focus on what actually matters for your flight." }
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

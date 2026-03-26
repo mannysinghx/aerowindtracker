@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Free Crosswind Calculator for Pilots — Real-Time Runway Analysis | AeroWindy</title>
+    <meta name="description" content="Free online crosswind calculator for pilots. Enter any US airport ICAO code to instantly see crosswind and headwind components for every runway based on live METAR data. Includes best runway recommendation." />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://www.aerowindy.com/features/crosswind-calculator" />
+    <meta name="author" content="AeroWindy" />
+    <meta name="theme-color" content="#0a1122" />
+
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="AeroWindy" />
+    <meta property="og:title"       content="Free Crosswind Calculator for Pilots — Real-Time Runway Analysis" />
+    <meta property="og:description" content="Instant crosswind and headwind components for any US airport runway, based on live METAR wind data. Free, no account required." />
+    <meta property="og:url"         content="https://www.aerowindy.com/features/crosswind-calculator" />
+    <meta property="og:image"       content="https://www.aerowindy.com/api/og?page=crosswind-calculator" />
+    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale"      content="en_US" />
+
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@aerowindy" />
+    <meta name="twitter:title"       content="Free Crosswind Calculator for Pilots — AeroWindy" />
+    <meta name="twitter:description" content="Live crosswind and headwind components for any US airport runway. Based on real METAR data." />
+    <meta name="twitter:image"       content="https://www.aerowindy.com/api/og?page=crosswind-calculator" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.aerowindy.com/features/crosswind-calculator#webpage",
+      "name": "Free Crosswind Calculator for Pilots",
+      "url": "https://www.aerowindy.com/features/crosswind-calculator",
+      "description": "Free online crosswind calculator for pilots. Live METAR-based crosswind and headwind components for every US airport runway.",
+      "isPartOf": { "@id": "https://www.aerowindy.com/#website" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "AeroWindy", "item": "https://www.aerowindy.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Features", "item": "https://www.aerowindy.com/features/" },
+          { "@type": "ListItem", "position": 3, "name": "Crosswind Calculator", "item": "https://www.aerowindy.com/features/crosswind-calculator" }
+        ]
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is a crosswind component?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A crosswind component is the portion of the wind blowing perpendicular to the runway centerline. If the wind is directly across the runway at 20 knots, the crosswind component is 20 knots. If the wind is at a 30-degree angle to the runway, the crosswind component is 20 × sin(30°) = 10 knots. Pilots must stay within their aircraft's demonstrated crosswind limit." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I calculate crosswind for landing?",
+          "acceptedAnswer": { "@type": "Answer", "text": "To calculate crosswind: 1) Find the angular difference between wind direction and runway heading. 2) Multiply wind speed by the sine of that angle to get the crosswind component. 3) Multiply wind speed by the cosine of that angle to get the headwind component. AeroWindy does this automatically using live METAR data for every runway at any searched US airport." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a typical crosswind limit for a small aircraft?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Most single-engine trainers like the Cessna 172 have a demonstrated crosswind limit of 15 knots. The Piper PA-28 Cherokee is similar at around 17 knots. Larger aircraft have higher limits — the Boeing 737-800 is certified to 36 knots crosswind. Always check your specific aircraft's POH/AFM for the demonstrated crosswind component." }
+        },
+        {
+          "@type": "Question",
+          "name": "Which runway should I use for landing?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Always land into the wind when possible to minimize groundspeed and crosswind component. AeroWindy automatically calculates the best runway at any US airport based on the current METAR wind direction and speed, showing you which runway gives the smallest crosswind and largest headwind component." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a headwind component?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The headwind component is the portion of wind directly opposing the aircraft's takeoff or landing direction. A direct 20-knot headwind means the aircraft's groundspeed is reduced by 20 knots at a given airspeed, shortening takeoff and landing distances. AeroWindy shows both crosswind and headwind components for every runway." }
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
