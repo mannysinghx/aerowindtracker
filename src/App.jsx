@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
 import { getTimezoneFromLatLon } from './utils/timezone';
@@ -148,6 +148,7 @@ function App() {
 
   // Agent Intelligence Dashboard
   const [showAgentsPanel, setShowAgentsPanel] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [agentAlertCount, setAgentAlertCount] = useState(0);
   const [activeFinding, setActiveFinding] = useState(null);
 
@@ -828,134 +829,69 @@ function App() {
           </div>
         </header>
 
-        {/* ── Panel Toggle Bar (centered, below header) ── */}
-        <div style={{
-          position: 'absolute', top: '62px', left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', gap: '8px', zIndex: 1100, pointerEvents: 'auto',
-        }}>
-          {/* Weather toggle */}
-          <button
-            onClick={() => setShowWeatherPanel(p => !p)}
-            title="Toggle Weather Overlay panel"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '4px 10px 4px 8px', borderRadius: '999px',
-              background: showWeatherPanel ? 'var(--accent-color)' : 'var(--panel-bg)',
-              border: `1px solid ${showWeatherPanel ? 'var(--accent-color)' : 'var(--panel-border)'}`,
-              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-              color: showWeatherPanel ? '#fff' : 'var(--text-secondary)',
-              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-              boxShadow: showWeatherPanel ? '0 0 10px var(--accent-glow)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <CloudRain size={12} />
-            <span>Weather</span>
-            {wxOverlay.type && (
-              <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem' }}>
-                {wxOverlay.type}
-              </span>
-            )}
-            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showWeatherPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
-              <span style={{ position: 'absolute', top: '2px', left: showWeatherPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showWeatherPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
-            </span>
-          </button>
+        {/* ── Right Toolbar ── */}
+        {(() => {
+          const toolbarBtn = (active, onClick, icon, label, badge, accentRgb) => {
+            const bg = active
+              ? accentRgb ? `rgba(${accentRgb},0.9)` : 'var(--accent-color)'
+              : 'var(--panel-bg)';
+            const border = active
+              ? accentRgb ? `rgba(${accentRgb},1)` : 'var(--accent-color)'
+              : 'var(--panel-border)';
+            return (
+              <button
+                key={label}
+                onClick={onClick}
+                title={label}
+                style={{
+                  width: '44px', height: '44px', borderRadius: '10px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px',
+                  background: bg, border: `1px solid ${border}`,
+                  backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                  color: active ? '#fff' : 'var(--text-secondary)',
+                  cursor: 'pointer', position: 'relative',
+                  boxShadow: active ? `0 0 12px rgba(${accentRgb || '14,165,233'},0.35)` : '0 2px 8px rgba(0,0,0,0.25)',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                {icon}
+                <span style={{ fontSize: '0.48rem', fontWeight: 700, letterSpacing: '0.3px', textTransform: 'uppercase', lineHeight: 1 }}>{label}</span>
+                {badge != null && badge > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '4px', right: '4px',
+                    background: '#ef4444', color: '#fff',
+                    borderRadius: '999px', fontSize: '0.5rem', fontWeight: 800,
+                    minWidth: '14px', height: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 3px', lineHeight: 1,
+                  }}>{badge}</span>
+                )}
+              </button>
+            );
+          };
+          return (
+            <div style={{
+              position: 'absolute', right: '16px', top: '70px',
+              display: 'flex', flexDirection: 'column', gap: '6px',
+              zIndex: 1100, pointerEvents: 'auto',
+            }}>
+              {toolbarBtn(showWeatherPanel, () => setShowWeatherPanel(p => !p), <CloudRain size={16} />, 'Weather', wxOverlay.type ? 1 : 0, '14,165,233')}
+              {toolbarBtn(showAlertsPanel, () => setShowAlertsPanel(p => !p), <AlertTriangle size={16} />, 'Alerts', alertFeed.length, '239,68,68')}
+              {toolbarBtn(showAgentsPanel, () => setShowAgentsPanel(p => !p), <Bot size={16} />, 'Agents', agentAlertCount || null, '99,102,241')}
+              {toolbarBtn(showSettingsPanel, () => setShowSettingsPanel(p => !p), <Settings size={16} />, 'Settings', null, '100,116,139')}
+            </div>
+          );
+        })()}
 
-          {/* Alerts toggle */}
-          <button
-            onClick={() => setShowAlertsPanel(p => !p)}
-            title="Toggle AI Alerts panel"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '4px 10px 4px 8px', borderRadius: '999px',
-              background: showAlertsPanel ? 'rgba(239,68,68,0.85)' : 'var(--panel-bg)',
-              border: `1px solid ${showAlertsPanel ? '#ef4444' : 'var(--panel-border)'}`,
-              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-              color: showAlertsPanel ? '#fff' : 'var(--text-secondary)',
-              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-              boxShadow: showAlertsPanel && alertFeed.length > 0 ? '0 0 10px rgba(239,68,68,0.4)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <AlertTriangle size={12} />
-            <span>Alerts</span>
-            {alertFeed.length > 0 && (
-              <span style={{ background: showAlertsPanel ? 'rgba(255,255,255,0.3)' : '#ef4444', color: '#fff', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem', fontWeight: 800 }}>
-                {alertFeed.length}
-              </span>
-            )}
-            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showAlertsPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
-              <span style={{ position: 'absolute', top: '2px', left: showAlertsPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showAlertsPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
-            </span>
-          </button>
-
-          {/* Agents Intelligence toggle */}
-          <button
-            onClick={() => setShowAgentsPanel(p => !p)}
-            title="Toggle Agent Intelligence panel"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '4px 10px 4px 8px', borderRadius: '999px',
-              background: showAgentsPanel ? 'rgba(99,102,241,0.85)' : 'var(--panel-bg)',
-              border: `1px solid ${showAgentsPanel ? '#6366f1' : 'var(--panel-border)'}`,
-              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-              color: showAgentsPanel ? '#fff' : 'var(--text-secondary)',
-              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-              boxShadow: showAgentsPanel ? '0 0 10px rgba(99,102,241,0.4)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Activity size={12} />
-            <span>Agents</span>
-            {agentAlertCount > 0 && (
-              <span style={{ background: '#ef4444', color: '#fff', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem', fontWeight: 800 }}>
-                {agentAlertCount}
-              </span>
-            )}
-            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showAgentsPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
-              <span style={{ position: 'absolute', top: '2px', left: showAgentsPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showAgentsPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
-            </span>
-          </button>
-
-          {/* Station Info toggle (only shown when a station is selected) */}
-          {selectedStation && (
-            <button
-              onClick={() => setSelectedStation(null)}
-              title="Close station info"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
-                padding: '4px 10px 4px 8px', borderRadius: '999px',
-                background: 'rgba(99,102,241,0.85)',
-                border: '1px solid #6366f1',
-                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-                color: '#fff',
-                fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Layers size={12} />
-              <span>{selectedStation.id}</span>
-              <X size={10} />
-            </button>
-          )}
-        </div>
-
-        {/* ── Weather Overlay Panel (centered, top) ── */}
+        {/* ── Weather Panel (right side) ── */}
         {showWeatherPanel && (
-          <div style={{
-            position: 'absolute', top: '102px', left: '50%', transform: 'translateX(-50%)',
-            zIndex: 1050, pointerEvents: 'auto',
-          }}>
+          <div style={{ position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
             <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
           </div>
         )}
 
-        {/* ── Agent Intelligence Dashboard (left side) ── */}
+        {/* ── Agent Intelligence Dashboard (right side) ── */}
         {showAgentsPanel && (
-          <div style={{
-            position: 'absolute', top: '102px', left: '16px',
-            zIndex: 1050, pointerEvents: 'auto',
-          }}>
+          <div style={{ position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
             <AgentDashboard
               onClose={() => { setShowAgentsPanel(false); setActiveFinding(null); }}
               onFindingSelect={setActiveFinding}
@@ -964,132 +900,110 @@ function App() {
           </div>
         )}
 
-        {/* ── Right Controls Panel ── */}
-        <div className={`right-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`}>
-          <div className="glass-panel ui-element" style={{ padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-
-            {/* Altitude Slider */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>ALT</span>
-              <div style={{ display: 'flex', alignItems: 'stretch', gap: '5px' }}>
-                <input
-                  type="range"
-                  min={0}
-                  max={ALTITUDES.length - 1}
-                  step={1}
-                  value={ALTITUDES.length - 1 - ALTITUDES.findIndex(a => a.level === altitude)}
-                  onChange={e => setAltitude(ALTITUDES[ALTITUDES.length - 1 - Number(e.target.value)].level)}
-                  className="altitude-slider"
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '130px', padding: '2px 0' }}>
-                  {ALTITUDES.map(a => (
-                    <span
-                      key={a.level}
-                      onClick={() => setAltitude(a.level)}
-                      style={{
-                        fontSize: '0.52rem', lineHeight: 1, cursor: 'pointer',
-                        fontWeight: altitude === a.level ? 800 : 500,
-                        color: altitude === a.level ? '#38bdf8' : 'var(--text-secondary)',
-                      }}
-                    >
-                      {a.level === 'ground' ? 'GND' : a.level.toUpperCase()}
-                    </span>
-                  ))}
+        {/* ── Alerts Panel (right side) ── */}
+        {showAlertsPanel && alertFeed.length > 0 && (
+          <div className="glass-panel ui-element" style={{
+            position: 'absolute', top: '70px', right: '70px',
+            width: '320px', maxHeight: '45vh', overflowY: 'auto',
+            padding: '15px', zIndex: 1050, pointerEvents: 'auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
+              <AlertTriangle size={16} color="#ef4444" />
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>AeroGuard AI Alerts</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {alertFeed.map((alert, idx) => (
+                <div key={idx} style={{
+                  background: theme === 'dark' ? 'rgba(30,41,59,0.6)' : 'rgba(241,245,249,0.8)',
+                  borderLeft: `3px solid ${alert.severity === 'HIGH' ? '#ef4444' : alert.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'}`,
+                  padding: '10px', borderRadius: '4px', fontSize: '0.85rem', lineHeight: '1.4',
+                }}>
+                  <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                    {alert.type} @ {alert.location}
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{alert.message}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Settings Panel (right side) ── */}
+        {showSettingsPanel && (
+          <div className="glass-panel ui-element" style={{
+            position: 'absolute', top: '70px', right: '70px',
+            padding: '16px', zIndex: 1050, pointerEvents: 'auto', minWidth: '200px',
+          }}>
+            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '14px' }}>Settings</div>
+
+            {/* Altitude */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Altitude</div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {ALTITUDES.map(a => (
+                  <span key={a.level} onClick={() => setAltitude(a.level)}
+                    style={{
+                      padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700,
+                      background: altitude === a.level ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                      color: altitude === a.level ? '#fff' : 'var(--text-secondary)',
+                      border: `1px solid ${altitude === a.level ? 'var(--accent-color)' : 'var(--panel-border)'}`,
+                      transition: 'all 0.15s',
+                    }}>
+                    {a.level === 'ground' ? 'GND' : a.level.toUpperCase()}
+                  </span>
+                ))}
               </div>
-              <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.2px' }}>
+              <div style={{ fontSize: '0.62rem', color: '#38bdf8', fontWeight: 700, marginTop: '6px' }}>
                 {ALTITUDES.find(a => a.level === altitude)?.label}
-              </span>
+              </div>
             </div>
 
-            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+            <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
 
-            {/* Base Map */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>MAP</span>
+            {/* Map Style */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Map Style</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
                 {Object.keys(MAP_STYLES).map(key => (
                   <div key={key} className={`altitude-step ${mapStyleKey === key ? 'active' : ''}`}
                     onClick={() => { setMapStyleKey(key); setTheme(key === 'light' ? 'light' : 'dark'); }}
-                    style={{ fontSize: '0.62rem', width: '36px', height: '30px', borderRadius: '7px' }}>
+                    style={{ fontSize: '0.62rem', height: '30px', borderRadius: '7px' }}>
                     {MAP_STYLES[key].name}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+            <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
 
-            {/* Runway Label Size */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>RWY</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                <div className="altitude-step" onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))} title="Increase label size" style={{ fontWeight: 700, fontSize: '0.8rem' }}>A+</div>
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 500, minWidth: '30px', textAlign: 'center' }}>{runwayFontSize}px</span>
-                <div className="altitude-step" onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))} title="Decrease label size" style={{ fontWeight: 700, fontSize: '0.8rem' }}>A-</div>
+            {/* Runway Label */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Runway Labels</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button className="altitude-step" onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))} style={{ fontWeight: 700, width: '28px', height: '28px' }}>A−</button>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, minWidth: '36px', textAlign: 'center' }}>{runwayFontSize}px</span>
+                <button className="altitude-step" onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))} style={{ fontWeight: 700, width: '28px', height: '28px' }}>A+</button>
               </div>
             </div>
 
-            {/* Divider */}
-            <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
+            <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
 
             {/* Wind Barb Size */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>WND</span>
-              <input
-                type="range"
-                min={16}
-                max={64}
-                step={4}
-                value={barbSize}
-                onChange={e => setBarbSize(Number(e.target.value))}
-                title="Wind barb size"
-                style={{
-                  writingMode: 'vertical-lr',
-                  direction: 'rtl',
-                  width: '6px',
-                  height: '80px',
-                  cursor: 'pointer',
-                  accentColor: 'var(--accent-color)',
-                  background: 'transparent'
-                }}
-              />
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{barbSize}px</span>
+            <div>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Wind Barb Size</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input type="range" min={16} max={64} step={4} value={barbSize}
+                  onChange={e => setBarbSize(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, minWidth: '32px' }}>{barbSize}px</span>
+              </div>
             </div>
-
           </div>
-        </div>
+        )}
 
         <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }}>
 
-          {/* AI Agent Alerts Sidebar - ON TOP */}
-          {showAlertsPanel && alertFeed.length > 0 && (
-            <div className="alerts-sidebar ui-element glass-panel" style={{ width: '320px', maxHeight: '40vh', overflowY: 'auto', padding: '15px', pointerEvents: 'auto', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
-                <AlertTriangle size={18} color="#ef4444" />
-                <h3 className="text-md font-bold" style={{ color: 'var(--text-primary)' }}>AeroGuard AI Alerts</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {alertFeed.map((alert, idx) => (
-                  <div key={idx} style={{
-                    background: theme === 'dark' ? 'rgba(30, 41, 59, 0.6)' : 'rgba(241, 245, 249, 0.8)',
-                    borderLeft: `3px solid ${alert.severity === 'HIGH' ? '#ef4444' : alert.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'}`,
-                    padding: '10px',
-                    borderRadius: '4px',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.4'
-                  }}>
-                    <span style={{ fontWeight: 'bold', color: alert.severity === 'HIGH' ? '#ef4444' : 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                      {alert.type} @ {alert.location}
-                    </span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{alert.message}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Info Panel (Wind pane) - BELOW */}
+          {/* Info Panel (Wind pane) */}
           <div className={`info-panel glass-panel ui-element ${selectedStation ? '' : 'hidden'}`} style={{ position: 'relative', top: 'auto', left: 'auto', pointerEvents: 'auto', flexShrink: 0 }}>
             <div className="info-header">
               <div>
