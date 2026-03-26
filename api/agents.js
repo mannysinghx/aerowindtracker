@@ -381,6 +381,9 @@ async function runAgents() {
   };
 }
 
+// Exported so api/refresh.js (cron) can call it directly to pre-populate KV.
+export { runAgents };
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
