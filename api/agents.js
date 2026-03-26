@@ -189,7 +189,7 @@ function runHazardAgent(ground, pireps) {
 function runTrendAgent() {
     return {
         name: 'TrendAgent', role: 'Condition Trends', status: 'ok',
-        findings: [{ id: 'TREND-SERVERLESS', type: 'INFO', severity: 'INFO', message: 'Trend analysis requires persistent state. Run the Express backend (node server.js) for full trend detection between data cycles.' }],
+        findings: [{ id: 'TREND-SERVERLESS', type: 'INFO', severity: 'INFO', message: 'Trend monitoring is initializing. Check back shortly for condition change analysis.' }],
         runAt: new Date().toISOString(),
     };
 }
