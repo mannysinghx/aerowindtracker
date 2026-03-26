@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
 import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
+import AgentDashboard from './components/AgentDashboard';
 import './App.css';
 
 const ALTITUDES = [
@@ -138,6 +139,28 @@ function App() {
   const [wxOverlay, setWxOverlay] = useState({ type: null, altitude: 'FL090', opacity: 0.65 });
   const [showWeatherPanel, setShowWeatherPanel] = useState(false);
   const [showAlertsPanel, setShowAlertsPanel] = useState(true);
+
+  // Agent Intelligence Dashboard
+  const [showAgentsPanel, setShowAgentsPanel] = useState(false);
+  const [agentAlertCount, setAgentAlertCount] = useState(0);
+
+  // Poll agent status for the toggle badge (lightweight — just checks count)
+  useEffect(() => {
+    async function checkAgents() {
+      try {
+        const res = await fetch('/api/agents');
+        if (!res.ok) return;
+        const data = await res.json();
+        const high = Object.values(data.agents || {}).reduce(
+          (n, a) => n + (a.findings?.filter(f => f.severity === 'HIGH').length ?? 0), 0
+        );
+        setAgentAlertCount(high);
+      } catch { /* server offline — badge stays at 0 */ }
+    }
+    checkAgents();
+    const id = setInterval(checkAgents, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Map style state
   const [mapStyleKey, setMapStyleKey] = useState('dark');
@@ -778,6 +801,34 @@ function App() {
             </span>
           </button>
 
+          {/* Agents Intelligence toggle */}
+          <button
+            onClick={() => setShowAgentsPanel(p => !p)}
+            title="Toggle Agent Intelligence panel"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px 4px 8px', borderRadius: '999px',
+              background: showAgentsPanel ? 'rgba(99,102,241,0.85)' : 'var(--panel-bg)',
+              border: `1px solid ${showAgentsPanel ? '#6366f1' : 'var(--panel-border)'}`,
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              color: showAgentsPanel ? '#fff' : 'var(--text-secondary)',
+              fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
+              boxShadow: showAgentsPanel ? '0 0 10px rgba(99,102,241,0.4)' : 'none',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Activity size={12} />
+            <span>Agents</span>
+            {agentAlertCount > 0 && (
+              <span style={{ background: '#ef4444', color: '#fff', borderRadius: '999px', padding: '1px 5px', fontSize: '0.58rem', fontWeight: 800 }}>
+                {agentAlertCount}
+              </span>
+            )}
+            <span style={{ marginLeft: '2px', width: '22px', height: '12px', borderRadius: '6px', background: showAgentsPanel ? 'rgba(255,255,255,0.3)' : 'var(--panel-border)', position: 'relative', flexShrink: 0, display: 'inline-block', transition: 'background 0.2s' }}>
+              <span style={{ position: 'absolute', top: '2px', left: showAgentsPanel ? '12px' : '2px', width: '8px', height: '8px', borderRadius: '50%', background: showAgentsPanel ? '#fff' : 'var(--text-secondary)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+            </span>
+          </button>
+
           {/* Station Info toggle (only shown when a station is selected) */}
           {selectedStation && (
             <button
@@ -808,6 +859,16 @@ function App() {
             zIndex: 1050, pointerEvents: 'auto',
           }}>
             <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
+          </div>
+        )}
+
+        {/* ── Agent Intelligence Dashboard (centered, top) ── */}
+        {showAgentsPanel && (
+          <div style={{
+            position: 'absolute', top: '102px', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1050, pointerEvents: 'auto',
+          }}>
+            <AgentDashboard onClose={() => setShowAgentsPanel(false)} />
           </div>
         )}
 
