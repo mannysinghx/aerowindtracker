@@ -736,8 +736,8 @@ function App() {
           <div className="glass-panel ui-element" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', pointerEvents: 'auto', alignSelf: 'flex-start', border: '1px solid var(--panel-border)', borderRadius: '12px', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
             <Wind className="brand-icon" size={16} color="var(--accent-color)" />
             <h1 className="text-base font-bold" style={{ color: 'var(--text-primary)', marginLeft: '8px', letterSpacing: '0.5px' }}>AeroWind Tracker</h1>
-            <span style={{ background: '#ef4444', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.55rem', fontWeight: 'bold', marginLeft: '8px', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)' }}>
-               BETA
+            <span style={{ background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '0.55rem', fontWeight: 'bold', marginLeft: '8px', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+               BETA - Experimental
             </span>
           </div>
 
