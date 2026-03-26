@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     try {
         if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MISSING_KEY') {
-             return res.status(200).json({ reply: "AeroGuard AI is in limited mode. Please set your GEMINI_API_KEY environment variable in Vercel to activate real-time intelligence." });
+             return res.status(200).json({ reply: "AeroGuard AI is still under construction. Real-time intelligence will be available soon." });
         }
 
         const { message, context, history } = req.body;

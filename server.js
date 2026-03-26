@@ -194,7 +194,7 @@ app.post('/api/tracking', (req, res) => {
 
 // Mock Vercel AI Chat endpoint for local testing
 app.post('/api/chat', (req, res) => {
-    res.json({ reply: `[Local Mock AI] Received your message: "${req.body.message}". In production this uses Gemini with context: ${req.body.context?.id || 'none'}` });
+    res.json({ reply: "AeroGuard AI is still under construction. Real-time intelligence will be available soon." });
 });
 
 // Host Vite's compiled static dist payload
