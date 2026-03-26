@@ -589,17 +589,17 @@ function App() {
               // 6 chevrons evenly from FROM end to TO end, all pointing toward tip (^)
               const chevYs = [103, 68, 33, -2, -37, -72];
               const chevrons = chevYs.map(cy =>
-                `<polyline points="9,${cy+9} 16,${cy} 23,${cy+9}"
-                           fill="none" stroke="${col}" stroke-width="2.5"
+                `<polyline points="11,${cy+6} 16,${cy} 21,${cy+6}"
+                           fill="none" stroke="${col}" stroke-width="1.5"
                            stroke-linecap="round" stroke-linejoin="round"/>`
               ).join('');
 
               radialForeground += `<g transform="rotate(${arrowRot} 16 16)" pointer-events="none">
                 <!-- Full diameter dotted line -->
                 <line x1="16" y1="${tipY}" x2="16" y2="${tailY}"
-                      stroke="${col}" stroke-width="2" stroke-dasharray="7,5" stroke-linecap="round"/>
+                      stroke="${col}" stroke-width="1" stroke-dasharray="6,5" stroke-linecap="round"/>
                 <!-- TO arrowhead at tip -->
-                <polygon points="16,${tipY} 24,${tipY+16} 8,${tipY+16}" fill="${col}"/>
+                <polygon points="16,${tipY} 21,${tipY+11} 11,${tipY+11}" fill="${col}"/>
                 <!-- Chevrons along full line FROM → TO -->
                 ${chevrons}
                 <!-- Bright FROM indicator outside radial circle -->
@@ -656,7 +656,7 @@ function App() {
 
               const lineColor = theme === 'dark' ? '#64748b' : '#94a3b8';
               const dashedColor = theme === 'dark' ? 'white' : '#1e293b';
-              const extensionColor = theme === 'dark' ? 'rgba(56, 189, 248, 0.6)' : 'rgba(37, 99, 235, 0.5)';
+              const extensionColor = theme === 'dark' ? 'rgba(251, 191, 36, 0.85)' : 'rgba(217, 119, 6, 0.8)';
               const textColor = theme === 'dark' ? '#ffffff' : '#0f172a';
               const tShadow = theme === 'dark' ? '' : 'text-shadow: 0 1px 3px rgba(255,255,255,0.9);';
 
