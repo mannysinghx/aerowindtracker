@@ -1,7 +1,11 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 const AI_AGENT = {
     name: 'AeroGuard AI',
     role: 'Aviation Safety & Anomaly Detection'
 };
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY');
 
 let cache = null;
 let lastFetchTime = 0;
@@ -48,6 +52,42 @@ async function generateAIAlerts(ground) {
     });
 
     return alerts.sort((a,b) => b.severity === 'HIGH' ? -1 : 1);
+}
+
+async function parseSeverePireps(pireps) {
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MISSING_KEY') {
+        return []; 
+    }
+    
+    // Extract severe or urgent (UUA) PIREPs
+    const severePireps = pireps.filter(p => p.rawOb && (p.rawOb.includes('SEV') || p.rawOb.includes('MOD-SEV') || p.rawOb.includes('UUA'))).slice(0, 5);
+    if (severePireps.length === 0) return [];
+
+    const prompt = `You are an expert aviation AI. Analyze the following raw PIREPs (Pilot Reports).
+Return a raw JSON array of objects with these exact keys: 
+- id (string, generate a unique ID like PIREP-123)
+- type ("TURBULENCE", "ICING", or "OTHER")
+- lat (number, use exact provided)
+- lon (number, use exact provided)
+- severity ("SEVERE" or "MODERATE")
+- description (A clear, plain-english 1-sentence translation of the report)
+- altitude (string, e.g., "FL350")
+
+Raw PIREPs:
+${JSON.stringify(severePireps.map((p, i) => ({ raw: p.rawOb, lat: p.lat, lon: p.lon })))}
+
+Respond ONLY with a valid JSON array. Do not include markdown formatting, backticks, or other text.`;
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(prompt);
+        let text = result.response.text();
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(text);
+    } catch (err) {
+        console.error("PIREP LLM Parsing Error:", err);
+        return [];
+    }
 }
 
 async function fetchAllData() {
@@ -102,10 +142,15 @@ async function fetchAllData() {
 
         const alerts = await generateAIAlerts(uniqueGround);
 
+        // Fetch and Parse PIREPs via LLM Agent
+        const pirepRaw = await fetch('https://aviationweather.gov/api/data/aircraftreport?format=json').then(r => r.json()).catch(() => []);
+        const aiParsedPireps = await parseSeverePireps(pirepRaw);
+
         cache = {
             ground: uniqueGround,
             aloft,
             alerts,
+            pireps: aiParsedPireps,
             lastUpdated: new Date().toISOString()
         };
         lastFetchTime = Date.now();

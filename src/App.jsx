@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Expand, Target, Sun, Moon } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User } from 'lucide-react';
 import { fetchLiveAIData } from './services/api';
 import CrosswindControls from './components/CrosswindControls';
 import './App.css';
@@ -111,6 +111,7 @@ function App() {
   const [mapZoom, setMapZoom] = useState(5);
   const [selectedStation, setSelectedStation] = useState(null);
   const [alertFeed, setAlertFeed] = useState([]);
+  const [pireps, setPireps] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -124,6 +125,14 @@ function App() {
 
   // Map style state
   const [mapStyleKey, setMapStyleKey] = useState('dark');
+  
+  // Chat Copilot state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'model', text: "Hello! I'm AeroGuard AI, your aviation copilot. Select an airport and ask me about the weather conditions or safety limits." }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
   
   // Disclaimer state
   const [disclaimerVisible, setDisclaimerVisible] = useState(true);
@@ -163,6 +172,41 @@ function App() {
     }
   };
 
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    
+    const userMsg = chatInput.trim();
+    const newMessages = [...chatMessages, { role: 'user', text: userMsg }];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      // Clean history for Gemini API req: { role: 'user'|'model', parts: [{ text: '...' }] }
+      const historyPayload = chatMessages.filter(m => m.role === 'user' || m.role === 'model').map(m => ({
+         role: m.role,
+         parts: [{ text: m.text }]
+      }));
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg,
+          context: selectedStation,
+          history: historyPayload
+        })
+      });
+      
+      const data = await res.json();
+      setChatMessages([...newMessages, { role: 'model', text: data.reply || data.error || 'Connection failed.' }]);
+    } catch (err) {
+      setChatMessages([...newMessages, { role: 'model', text: 'Error connecting to AeroGuard AI.' }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
@@ -188,7 +232,7 @@ function App() {
         return;
       }
 
-      const { ground, aloft, alerts, lastUpdated: updateTime } = liveData;
+      const { ground, aloft, alerts, pireps: fetchedPireps, lastUpdated: updateTime } = liveData;
 
       if (allAirports.length === 0) {
         let airports = [];
@@ -213,6 +257,7 @@ function App() {
         setStations(ground || []);
         setAloftData(aloft || []);
         setAlertFeed(alerts || []);
+        setPireps(fetchedPireps || []);
         setLastUpdated(updateTime ? new Date(updateTime).toLocaleTimeString() : null);
         setLoading(false);
       }
@@ -558,6 +603,23 @@ function App() {
             })}
           />
         )}
+        {pireps.map((p, i) => (
+          <Marker
+            key={p.id || i}
+            position={[p.lat, p.lon]}
+            icon={new L.divIcon({
+              html: `<div style="width:24px; height:24px; background: #f97316; border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px #f97316;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>`,
+              className: '',
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
+            })}
+            eventHandlers={{
+              click: () => {
+                 alert(`LLM PARSED PIREP\nType: ${p.type}\nSeverity: ${p.severity}\nAltitude: ${p.altitude}\n\nTranslation: ${p.description}`);
+              }
+            }}
+          />
+        ))}
       </MapContainer>
 
       <div className="overlay-ui">
@@ -768,8 +830,70 @@ function App() {
           )}
 
         </div>
+
+        {/* Chat Copilot Widget */}
+        <div className={`chat-copilot-widget ${chatOpen ? 'open' : ''}`} style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: 3000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'auto' }}>
+          {!chatOpen && (
+            <button 
+              className="glass-panel hover-scale" 
+              onClick={() => setChatOpen(true)}
+              style={{ width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid var(--accent-color)', background: theme === 'dark' ? 'rgba(15,23,42,0.9)' : 'rgba(255,255,255,0.9)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+            >
+              <MessageSquare size={28} color="var(--accent-color)" />
+            </button>
+          )}
+
+          {chatOpen && (
+            <div className="glass-panel ui-element" style={{ width: '350px', height: '500px', display: 'flex', flexDirection: 'column', borderRadius: '16px', border: '1px solid var(--panel-border)', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+              <div style={{ padding: '15px', background: 'var(--accent-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Bot size={20} />
+                    <span style={{ fontWeight: 'bold' }}>AeroGuard Copilot</span>
+                 </div>
+                 <button onClick={() => setChatOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+
+              <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {chatMessages.map((msg, i) => (
+                   <div key={i} style={{ display: 'flex', gap: '10px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                      {msg.role === 'model' && <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Bot size={16} color="white" /></div>}
+                      <div style={{ background: msg.role === 'user' ? 'var(--accent-color)' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'), color: msg.role === 'user' ? 'white' : 'var(--text-primary)', padding: '10px 14px', borderRadius: '12px', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                         {msg.text}
+                      </div>
+                      {msg.role === 'user' && <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: theme === 'dark' ? '#334155' : '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><User size={16} color="var(--text-primary)" /></div>}
+                   </div>
+                ))}
+                {chatLoading && (
+                   <div style={{ alignSelf: 'flex-start', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Bot size={16} color="white" /></div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Thinking...</span>
+                   </div>
+                )}
+              </div>
+
+              <div style={{ padding: '15px', borderTop: '1px solid var(--panel-border)', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleChatSubmit(); }}
+                  placeholder={selectedStation ? `Ask about ${selectedStation.id}...` : 'Type a question...'}
+                  style={{ flex: 1, background: theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)', border: '1px solid var(--panel-border)', borderRadius: '20px', padding: '10px 15px', color: 'var(--text-primary)', outline: 'none' }}
+                />
+                <button 
+                  onClick={handleChatSubmit}
+                  disabled={chatLoading || !chatInput.trim()}
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent-color)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatLoading || !chatInput.trim() ? 'not-allowed' : 'pointer', opacity: chatLoading || !chatInput.trim() ? 0.5 : 1, flexShrink: 0 }}
+                >
+                   <Send size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Permanent Aviation Disclaimer Overlay */}
+
         {disclaimerVisible && (
           <div className="disclaimer-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="disclaimer-banner glass-panel ui-element" style={{ width: '90%', maxWidth: '650px', padding: '30px 40px', display: 'flex', flexDirection: 'column', gap: '20px', borderTop: '4px solid #ef4444', background: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)', boxShadow: '0 25px 60px rgba(0,0,0,0.8)', borderRadius: '12px' }}>
