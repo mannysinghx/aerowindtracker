@@ -883,17 +883,38 @@ function App() {
         <div className={`right-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`}>
           <div className="glass-panel ui-element" style={{ padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
 
-            {/* Altitude */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+            {/* Altitude Slider */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
               <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>ALT</span>
-              <div className="altitude-steps">
-                {ALTITUDES.map((alt) => (
-                  <div key={alt.level} className={`altitude-step ${altitude === alt.level ? 'active' : ''}`}
-                    onClick={() => setAltitude(alt.level)} title={alt.label}>
-                    {alt.level === 'ground' ? 'GND' : alt.level.replace('k', 'K')}
-                  </div>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'stretch', gap: '5px' }}>
+                <input
+                  type="range"
+                  min={0}
+                  max={ALTITUDES.length - 1}
+                  step={1}
+                  value={ALTITUDES.length - 1 - ALTITUDES.findIndex(a => a.level === altitude)}
+                  onChange={e => setAltitude(ALTITUDES[ALTITUDES.length - 1 - Number(e.target.value)].level)}
+                  className="altitude-slider"
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '130px', padding: '2px 0' }}>
+                  {ALTITUDES.map(a => (
+                    <span
+                      key={a.level}
+                      onClick={() => setAltitude(a.level)}
+                      style={{
+                        fontSize: '0.52rem', lineHeight: 1, cursor: 'pointer',
+                        fontWeight: altitude === a.level ? 800 : 500,
+                        color: altitude === a.level ? '#38bdf8' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {a.level === 'ground' ? 'GND' : a.level.toUpperCase()}
+                    </span>
+                  ))}
+                </div>
               </div>
+              <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.2px' }}>
+                {ALTITUDES.find(a => a.level === altitude)?.label}
+              </span>
             </div>
 
             <div style={{ width: '100%', height: '1px', background: 'var(--panel-border)' }} />
