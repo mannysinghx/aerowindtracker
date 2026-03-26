@@ -16,6 +16,13 @@ const ALTITUDES = [
   { level: 'ground', label: 'Ground' },
 ];
 
+const MAP_STYLES = {
+  dark: { name: 'Dark', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '&copy; CartoDB' },
+  light: { name: 'Light', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: '&copy; CartoDB' },
+  hybrid: { name: 'Hybrid', url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr: '&copy; Google Maps' },
+  terrain: { name: 'Terrain', url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', attr: '&copy; Google Maps' }
+};
+
 function getWindColor(speed) {
   if (speed === null || speed === undefined) return '#94a3b8';
   if (speed < 5) return '#10b981';
@@ -116,8 +123,7 @@ function App() {
   const [runwayFontSize, setRunwayFontSize] = useState(16);
 
   // Map style state
-  const [mapStyle, setMapStyle] = useState('dark_all');
-  const [mapStyleName, setMapStyleName] = useState('Dark');
+  const [mapStyleKey, setMapStyleKey] = useState('dark');
   
   // Disclaimer state
   const [disclaimerVisible, setDisclaimerVisible] = useState(true);
@@ -164,8 +170,9 @@ function App() {
   const toggleTheme = () => {
     setTheme(t => {
       const newTheme = t === 'dark' ? 'light' : 'dark';
-      setMapStyle(newTheme === 'dark' ? 'dark_all' : 'light_all');
-      setMapStyleName(newTheme === 'dark' ? 'Dark' : 'Light');
+      // Automatically switch map style if it was explicitly dark/light to match theme
+      if (mapStyleKey === 'dark' && newTheme === 'light') setMapStyleKey('light');
+      if (mapStyleKey === 'light' && newTheme === 'dark') setMapStyleKey('dark');
       return newTheme;
     });
   };
@@ -394,8 +401,8 @@ function App() {
     <div className="app-container">
       <MapContainer center={center} zoom={5} zoomControl={false} className="leaflet-container">
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-          url={`https://{s}.basemaps.cartocdn.com/${mapStyle}/{z}/{x}/{y}{r}.png`}
+          attribution={MAP_STYLES[mapStyleKey].attr}
+          url={MAP_STYLES[mapStyleKey].url}
         />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} />
         <MapController targetPos={searchTarget} />
@@ -604,6 +611,24 @@ function App() {
         </div>
 
         <div className="right-controls">
+          <div className="map-style-control ui-element">
+            <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.4rem 1rem', marginBottom: '0.5rem', borderRadius: '20px' }}>
+              Base Map
+            </div>
+            <div className="altitude-steps map-style-steps" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+              {Object.keys(MAP_STYLES).map(key => (
+                <div
+                  key={key}
+                  className={`altitude-step ${mapStyleKey === key ? 'active' : ''}`}
+                  onClick={() => { setMapStyleKey(key); setTheme(key === 'light' ? 'light' : 'dark'); }}
+                  style={{ fontSize: '0.7rem', padding: '0.3rem' }}
+                >
+                  {MAP_STYLES[key].name}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="altitude-control ui-element">
             <div className="glass-panel text-sm font-medium hover-glow" style={{ padding: '0.5rem 1rem', marginBottom: '1rem', borderRadius: '20px' }}>
               Altitude
