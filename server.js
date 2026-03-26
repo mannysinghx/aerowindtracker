@@ -91,7 +91,8 @@ function generateAIAlerts(ground) {
         message: `AeroGuard AI active. Analyzing ${ground.length} remote weather stations autonomously.`,
         severity: 'INFO'
     });
-    return alerts.sort((a, b) => b.severity === 'HIGH' ? -1 : 1);
+    const SEV_ORDER = { HIGH: 0, MEDIUM: 1, INFO: 2 };
+    return alerts.sort((a, b) => (SEV_ORDER[a.severity] ?? 3) - (SEV_ORDER[b.severity] ?? 3));
 }
 
 // ─── PIREP Parser (LLM) ───────────────────────────────────────────────────────

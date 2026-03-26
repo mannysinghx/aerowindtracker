@@ -1,186 +1,71 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const AI_AGENT = {
-    name: 'AeroGuard AI',
-    role: 'Aviation Safety & Anomaly Detection'
-};
+import { fetchMETARs, fetchAloft, fetchPireps, generateAlerts } from './_wx.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_KEY');
 
 let cache = null;
 let lastFetchTime = 0;
 
-const BBOXES = [
-  "24.0,-90.0,35.0,-75.0",   // SE
-  "35.0,-90.0,49.0,-75.0",   // NE
-  "24.0,-105.0,35.0,-90.0",  // S-Mid
-  "35.0,-105.0,49.0,-90.0",  // N-Mid
-  "30.0,-125.0,40.0,-105.0", // SW
-  "40.0,-125.0,49.0,-105.0"  // NW
-];
-
-async function generateAIAlerts(ground) {
-    const alerts = [];
-    const severeWinds = ground.filter(s => s.wspd >= 35 || s.wgst >= 45);
-    for (const w of severeWinds.slice(0, 10)) { 
-        alerts.push({
-            id: `WIND-${w.icaoId}-${Date.now()}`,
-            type: 'SEVERE_WIND',
-            location: w.icaoId,
-            message: `URGENT: ${AI_AGENT.name} detected sustained winds of ${w.wspd}kts (gusting ${w.wgst || 'N/A' + 'kts'}) at ${w.icaoId}. Microburst or frontal boundary likely.`,
-            severity: 'HIGH'
-        });
-    }
-
-    const fogRisks = ground.filter(s => s.temp !== null && s.dewp !== null && (s.temp - s.dewp) <= 2 && (s.temp - s.dewp) >= 0 && s.wspd < 10);
-    for (const f of fogRisks.slice(0, 5)) {
-        alerts.push({
-            id: `FOG-${f.icaoId}-${Date.now()}`,
-            type: 'VISIBILITY',
-            location: f.icaoId,
-            message: `NOTICE: ${AI_AGENT.name} predicts imminent fog formation at ${f.icaoId}. Temp/Dew spread is critical (${f.temp}°C / ${f.dewp}°C) with calm winds.`,
-            severity: 'MEDIUM'
-        });
-    }
-
-    alerts.push({
-         id: `SYS-${Date.now()}`,
-         type: 'SYSTEM',
-         location: 'GLOBAL',
-         message: `${AI_AGENT.name} active. Analyzing ${ground.length} remote weather stations autonomously.`,
-         severity: 'INFO'
-    });
-
-    return alerts.sort((a,b) => b.severity === 'HIGH' ? -1 : 1);
-}
-
 async function parseSeverePireps(pireps) {
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MISSING_KEY') {
-        return []; 
-    }
-    
-    // Extract severe or urgent (UUA) PIREPs
-    const severePireps = pireps.filter(p => p.rawOb && (p.rawOb.includes('SEV') || p.rawOb.includes('MOD-SEV') || p.rawOb.includes('UUA'))).slice(0, 5);
-    if (severePireps.length === 0) return [];
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MISSING_KEY') return [];
+  const severePireps = pireps.filter(p =>
+    p.rawOb && (p.rawOb.includes('SEV') || p.rawOb.includes('MOD-SEV') || p.rawOb.includes('UUA'))
+  ).slice(0, 5);
+  if (severePireps.length === 0) return [];
 
-    const prompt = `You are an expert aviation AI. Analyze the following raw PIREPs (Pilot Reports).
-Return a raw JSON array of objects with these exact keys: 
-- id (string, generate a unique ID like PIREP-123)
-- type ("TURBULENCE", "ICING", or "OTHER")
-- lat (number, use exact provided)
-- lon (number, use exact provided)
-- severity ("SEVERE" or "MODERATE")
-- description (A clear, plain-english 1-sentence translation of the report)
-- altitude (string, e.g., "FL350")
+  const prompt = `You are an expert aviation AI. Analyze the following raw PIREPs (Pilot Reports).
+Return a raw JSON array with keys: id, type ("TURBULENCE"/"ICING"/"OTHER"), lat, lon, severity ("SEVERE"/"MODERATE"), description (1-sentence plain English), altitude (e.g. "FL350").
+Raw PIREPs: ${JSON.stringify(severePireps.map(p => ({ raw: p.rawOb, lat: p.lat, lon: p.lon })))}
+Respond ONLY with a valid JSON array. No markdown, no backticks.`;
 
-Raw PIREPs:
-${JSON.stringify(severePireps.map((p, i) => ({ raw: p.rawOb, lat: p.lat, lon: p.lon })))}
-
-Respond ONLY with a valid JSON array. Do not include markdown formatting, backticks, or other text.`;
-
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const result = await model.generateContent(prompt);
-        let text = result.response.text();
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(text);
-    } catch (err) {
-        console.error("PIREP LLM Parsing Error:", err);
-        return [];
-    }
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error('PIREP LLM Error:', err);
+    return [];
+  }
 }
 
 async function fetchAllData() {
-    try {
-        const groundPromises = BBOXES.map(box => 
-           fetch(`https://aviationweather.gov/api/data/metar?bbox=${box}&format=json`)
-           .then(r => r.json())
-           .catch(() => [])
-        );
-        const groundResults = await Promise.all(groundPromises);
-        let ground = [];
-        groundResults.forEach(res => { if(Array.isArray(res)) ground = ground.concat(res); });
-        
-        const uniqueGround = [];
-        const seen = new Set();
-        for (const s of ground) {
-            if (!seen.has(s.icaoId) && s.lat && s.lon && s.wspd !== null) {
-                seen.add(s.icaoId);
-                uniqueGround.push(s);
-            }
-        }
+  try {
+    const [ground, aloft, pirepRaw] = await Promise.all([
+      fetchMETARs(),
+      fetchAloft(),
+      fetchPireps(),
+    ]);
 
-        const aloftRaw = await fetch('https://aviationweather.gov/api/data/windtemp?region=all&level=low&fcst=06&format=raw').then(r => r.text()).catch(() => "");
-        
-        const aloft = [];
-        const parseLvl = (str) => {
-            if (!str || str.length < 4) return null;
-            let dir = parseInt(str.substring(0, 2)) * 10;
-            let spd = parseInt(str.substring(2, 4));
-            if (isNaN(dir) || isNaN(spd)) return null;
-            if (dir >= 500) { dir -= 500; spd += 100; }
-            let t = null;
-            if (str.length >= 6) {
-                const sign = str[4];
-                const digits = str.substring(5, 7);
-                if (sign === '+' || sign === '-') {
-                    t = parseInt(digits);
-                    if (!isNaN(t) && sign === '-') t = -t;
-                } else {
-                    // 18000ft+ entries have no sign; temps implicitly negative
-                    t = -Math.abs(parseInt(str.substring(4, 6)));
-                }
-            }
-            return { windDir: dir, windSpeed: spd, temp: t };
-        };
-        const lines = aloftRaw.split('\n');
-        for (const line of lines) {
-            const parts = line.trim().split(/\s+/);
-            // Valid data lines: station ID (3 alpha chars) + at least 5 level entries
-            if (parts.length >= 6 && /^[A-Z]{3}$/.test(parts[0])) {
-                aloft.push({
-                    icaoId: 'K' + parts[0],
-                    levels: {
-                        '3k':  parseLvl(parts[1]),
-                        '6k':  parseLvl(parts[2]),
-                        '9k':  parseLvl(parts[3]),
-                        '12k': parseLvl(parts[4]),
-                        '18k': parseLvl(parts[5])
-                    }
-                });
-            }
-        }
+    const alerts = generateAlerts(ground);
+    const aiParsedPireps = await parseSeverePireps(pirepRaw);
 
-        const alerts = await generateAIAlerts(uniqueGround);
-
-        // Fetch and Parse PIREPs via LLM Agent
-        const pirepRaw = await fetch('https://aviationweather.gov/api/data/aircraftreport?format=json').then(r => r.json()).catch(() => []);
-        const aiParsedPireps = await parseSeverePireps(pirepRaw);
-
-        cache = {
-            ground: uniqueGround,
-            aloft,
-            alerts,
-            pireps: aiParsedPireps,
-            lastUpdated: new Date().toISOString()
-        };
-        lastFetchTime = Date.now();
-    } catch (e) {
-        console.error("Vercel agent ingestion error:", e);
-    }
+    cache = {
+      ground,
+      aloft,
+      alerts,
+      pireps: aiParsedPireps,
+      lastUpdated: new Date().toISOString()
+    };
+    lastFetchTime = Date.now();
+  } catch (e) {
+    console.error('Vercel agent ingestion error:', e);
+  }
 }
 
 export default async function handler(req, res) {
-    const now = Date.now();
-    // Cache for 5 minutes during Vercel container lifecycle
-    if (!cache || (now - lastFetchTime > 5 * 60 * 1000)) {
-        await fetchAllData();
-    }
-    
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    if (!cache) {
-       return res.status(500).json({ error: "Internal Server Error syncing AI telemetry." });
-    }
-    
-    res.status(200).json(cache);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const now = Date.now();
+  if (!cache || (now - lastFetchTime > 5 * 60 * 1000)) {
+    await fetchAllData();
+  }
+
+  if (!cache) {
+    return res.status(500).json({ error: 'Internal Server Error syncing AI telemetry.' });
+  }
+
+  res.status(200).json(cache);
 }

@@ -128,9 +128,11 @@ function useRainViewerPath(enabled) {
 }
 
 function usePirepLayer(enabled, pirepCode, altitude) {
-  const [points, setPoints] = useState([]);
+  const [rawPoints, setRawPoints] = useState([]);
+  // Derive cleared state without an effect — avoids cascading render from setState-in-effect
+  const points = enabled ? rawPoints : [];
   useEffect(() => {
-    if (!enabled) { setPoints([]); return; }
+    if (!enabled) return;
     let cancelled = false;
     const targetFl = flToInt(altitude); // e.g. 90 for FL090
 
@@ -160,7 +162,7 @@ function usePirepLayer(enabled, pirepCode, altitude) {
             altFl: p.fltLvl,
             raw: (p.rawOb || '').substring(0, 150),
           }));
-        setPoints(parsed);
+        setRawPoints(parsed);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -169,13 +171,15 @@ function usePirepLayer(enabled, pirepCode, altitude) {
 }
 
 function useSigmetGeoJSON(enabled) {
-  const [geojson, setGeojson] = useState(null);
+  const [rawGeojson, setRawGeojson] = useState(null);
+  // Derive cleared state without an effect
+  const geojson = enabled ? rawGeojson : null;
   useEffect(() => {
-    if (!enabled) { setGeojson(null); return; }
+    if (!enabled) return;
     let cancelled = false;
     fetch('/wx/api/data/sigmet?format=geojson')
       .then(r => r.json())
-      .then(data => { if (!cancelled) setGeojson(data); })
+      .then(data => { if (!cancelled) setRawGeojson(data); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [enabled]);

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function CrosswindControls({ windDir, windSpeed, runwayHeading, theme }) {
+export default function CrosswindControls({ windDir, runwayHeading, theme }) {
   if (windDir === null || runwayHeading === null) return null;
 
   // Relative wind angle relative to the nose (0 is straight ahead, 90 is right wing)

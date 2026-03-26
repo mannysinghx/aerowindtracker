@@ -205,7 +205,7 @@ function App() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => sendTrackingData(position.coords.latitude, position.coords.longitude),
-        (error) => sendTrackingData(null, null),
+        () => sendTrackingData(null, null),
         { timeout: 8000 }
       );
     } else {
@@ -287,13 +287,13 @@ function App() {
         try {
           const res = await fetch('/us_airports.json');
           if (res.ok) airports = await res.json();
-        } catch (e) { }
+        } catch { /* static asset unavailable */ }
 
         let runways = {};
         try {
           const res = await fetch('/us_runways.json');
           if (res.ok) runways = await res.json();
-        } catch (e) { }
+        } catch { /* static asset unavailable */ }
 
         if (isMounted) {
           setAllAirports(airports);
