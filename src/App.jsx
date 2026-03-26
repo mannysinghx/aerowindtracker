@@ -874,10 +874,22 @@ function App() {
               display: 'flex', flexDirection: 'column', gap: '6px',
               zIndex: 1100, pointerEvents: 'auto',
             }}>
-              {toolbarBtn(showWeatherPanel, () => setShowWeatherPanel(p => !p), <CloudRain size={16} />, 'Weather', wxOverlay.type ? 1 : 0, '14,165,233')}
-              {toolbarBtn(showAlertsPanel, () => setShowAlertsPanel(p => !p), <AlertTriangle size={16} />, 'Alerts', alertFeed.length, '239,68,68')}
-              {toolbarBtn(showAgentsPanel, () => setShowAgentsPanel(p => !p), <Bot size={16} />, 'Agents', agentAlertCount || null, '99,102,241')}
-              {toolbarBtn(showSettingsPanel, () => setShowSettingsPanel(p => !p), <Settings size={16} />, 'Settings', null, '100,116,139')}
+              {(() => {
+                const openPanel = (key) => {
+                  const isOpen = { weather: showWeatherPanel, alerts: showAlertsPanel, agents: showAgentsPanel, settings: showSettingsPanel }[key];
+                  setShowWeatherPanel(key === 'weather' && !isOpen);
+                  setShowAlertsPanel(key === 'alerts' && !isOpen);
+                  setShowAgentsPanel(key === 'agents' && !isOpen);
+                  setShowSettingsPanel(key === 'settings' && !isOpen);
+                  if (key !== 'agents') { setActiveFinding(null); }
+                };
+                return (<>
+                  {toolbarBtn(showWeatherPanel, () => openPanel('weather'), <CloudRain size={16} />, 'Weather', wxOverlay.type ? 1 : 0, '14,165,233')}
+                  {toolbarBtn(showAlertsPanel, () => openPanel('alerts'), <AlertTriangle size={16} />, 'Alerts', alertFeed.length, '239,68,68')}
+                  {toolbarBtn(showAgentsPanel, () => openPanel('agents'), <Bot size={16} />, 'Agents', agentAlertCount || null, '99,102,241')}
+                  {toolbarBtn(showSettingsPanel, () => openPanel('settings'), <Settings size={16} />, 'Settings', null, '100,116,139')}
+                </>);
+              })()}
             </div>
           );
         })()}
