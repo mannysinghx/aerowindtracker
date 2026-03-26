@@ -865,10 +865,10 @@ function App() {
           </div>
         )}
 
-        {/* ── Agent Intelligence Dashboard (centered, top) ── */}
+        {/* ── Agent Intelligence Dashboard (left side) ── */}
         {showAgentsPanel && (
           <div style={{
-            position: 'absolute', top: '102px', left: '50%', transform: 'translateX(-50%)',
+            position: 'absolute', top: '102px', left: '16px',
             zIndex: 1050, pointerEvents: 'auto',
           }}>
             <AgentDashboard
