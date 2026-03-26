@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // Enable JSON body parsing
 
 const AI_AGENT = {
     name: 'AeroGuard AI',
@@ -139,6 +140,12 @@ setInterval(fetchAllData, 5 * 60 * 1000);
 
 app.get('/api/data', (req, res) => {
     res.json(cache);
+});
+
+// Mock Vercel KV endpoint for local testing
+app.post('/api/tracking', (req, res) => {
+    console.log(`[KV Mock] Saved tracking data for user: ${req.body.userId}`);
+    res.json({ success: true, message: 'Tracking data recorded (mocked locally)' });
 });
 
 // Host Vite's compiled static dist payload
