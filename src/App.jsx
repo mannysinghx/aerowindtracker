@@ -810,15 +810,13 @@ function App() {
           }
 
           const shapeSvg = windMarkerShape(barbStyle, rotation, color, point.windSpeed, theme === 'dark');
-          // Dot and minimal styles suppress decorative radial overlays — but runways always shown
-          const suppressDecorations = barbStyle === 'dot' || barbStyle === 'minimal' || barbStyle === 'chevron';
           const svgArrow = `
             <div style="width: ${barbSize}px; height: ${barbSize}px;">
               <svg width="${barbSize}" height="${barbSize}" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
                 <g style="pointer-events: auto;">
-                  ${suppressDecorations ? '' : radialBackdrop}
+                  ${radialBackdrop}
                   ${runwaysSvg}
-                  ${suppressDecorations ? '' : radialForeground}
+                  ${radialForeground}
                   ${shapeSvg}
                 </g>
               </svg>
