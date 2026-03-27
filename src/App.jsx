@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
 import { getTimezoneFromLatLon } from './utils/timezone';
@@ -159,7 +159,8 @@ function App() {
   // Weather overlay
   const [wxOverlay, setWxOverlay] = useState({ type: null, altitude: 'FL090', opacity: 0.65 });
   const [showWeatherPanel, setShowWeatherPanel] = useState(false);
-  const [showAlertsPanel, setShowAlertsPanel] = useState(true);
+  const [showAlertsPanel, setShowAlertsPanel] = useState(window.innerWidth > 768);
+  const [mobilePanelExpanded, setMobilePanelExpanded] = useState(false);
 
   // Agent Intelligence Dashboard
   const [showAgentsPanel, setShowAgentsPanel] = useState(false);
@@ -735,7 +736,7 @@ function App() {
               position={[point.lat, point.lon]}
               icon={customIcon}
               eventHandlers={{
-                click: () => { setSelectedStation(point); setSearchedAirport(null); }
+                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(false); }
               }}
             />
           );
@@ -797,7 +798,7 @@ function App() {
           {/* Center: Search */}
           <div className={`glass-panel ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{
             position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-            width: isMobile ? 'calc(100% - 260px)' : '300px',
+            width: isMobile ? 'calc(100% - 100px)' : '300px',
             padding: '7px 12px', borderRadius: '10px', pointerEvents: 'auto', zIndex: 1,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -886,7 +887,7 @@ function App() {
             );
           };
           return (
-            <div style={{
+            <div className={`right-toolbar${isMobile && !isMobileMenuOpen ? ' mobile-hidden' : ''}`} style={{
               position: 'absolute', right: '16px', top: '70px',
               display: 'flex', flexDirection: 'column', gap: '6px',
               zIndex: 1100, pointerEvents: 'auto',
@@ -899,6 +900,8 @@ function App() {
                   setShowAgentsPanel(key === 'agents' && !isOpen);
                   setShowSettingsPanel(key === 'settings' && !isOpen);
                   if (key !== 'agents') { setActiveFinding(null); }
+                  // On mobile, close the toolbar so the panel is fully visible
+                  if (isMobile && !isOpen) setIsMobileMenuOpen(false);
                 };
                 return (<>
                   {toolbarBtn(showWeatherPanel, () => openPanel('weather'), <CloudRain size={16} />, 'Weather', wxOverlay.type ? 1 : 0, '14,165,233')}
@@ -911,16 +914,16 @@ function App() {
           );
         })()}
 
-        {/* ── Weather Panel (right side) ── */}
+        {/* ── Weather Panel (right side / mobile bottom sheet) ── */}
         {showWeatherPanel && (
-          <div style={{ position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
+          <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
             <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
           </div>
         )}
 
-        {/* ── Agent Intelligence Dashboard (right side) ── */}
+        {/* ── Agent Intelligence Dashboard (right side / mobile bottom sheet) ── */}
         {showAgentsPanel && (
-          <div style={{ position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
+          <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
             <AgentDashboard
               onClose={() => { setShowAgentsPanel(false); setActiveFinding(null); }}
               onFindingSelect={setActiveFinding}
@@ -929,9 +932,11 @@ function App() {
           </div>
         )}
 
-        {/* ── Alerts Panel (right side) ── */}
+        {/* ── Alerts Panel (right side / mobile bottom sheet) ── */}
         {showAlertsPanel && alertFeed.length > 0 && (
-          <div className="glass-panel ui-element" style={{
+          <div className={`glass-panel ui-element${isMobile ? ' mobile-bottom-sheet' : ''}`} style={isMobile ? {
+            padding: '15px', pointerEvents: 'auto',
+          } : {
             position: 'absolute', top: '70px', right: '70px',
             width: '320px', maxHeight: '45vh', overflowY: 'auto',
             padding: '15px', zIndex: 1050, pointerEvents: 'auto',
@@ -983,9 +988,11 @@ function App() {
           </div>
         )}
 
-        {/* ── Settings Panel (right side) ── */}
+        {/* ── Settings Panel (right side / mobile bottom sheet) ── */}
         {showSettingsPanel && (
-          <div className="glass-panel ui-element" style={{
+          <div className={`glass-panel ui-element${isMobile ? ' mobile-bottom-sheet' : ''}`} style={isMobile ? {
+            padding: '16px', pointerEvents: 'auto',
+          } : {
             position: 'absolute', top: '70px', right: '70px',
             padding: '16px', zIndex: 1050, pointerEvents: 'auto', minWidth: '200px',
           }}>
@@ -1056,24 +1063,49 @@ function App() {
           </div>
         )}
 
-        <div className={`left-controls ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{ position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }}>
+        <div
+          className={`left-controls ${isMobile && !isMobileMenuOpen && !selectedStation ? 'mobile-hidden' : ''}`}
+          style={isMobile && selectedStation
+            ? { position: 'absolute', bottom: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'column', zIndex: 4000, pointerEvents: 'none' }
+            : { position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }
+          }
+        >
 
           {/* Info Panel (Wind pane) */}
-          <div className={`info-panel glass-panel ui-element ${selectedStation ? '' : 'hidden'}`} style={{ position: 'relative', top: 'auto', left: 'auto', pointerEvents: 'auto', flexShrink: 0 }}>
+          <div className={`info-panel glass-panel ui-element ${selectedStation ? '' : 'hidden'} ${isMobile && !mobilePanelExpanded ? 'mobile-compact' : ''}`} style={{ position: 'relative', top: 'auto', left: 'auto', pointerEvents: 'auto', flexShrink: 0 }}>
             <div className="info-header">
-              <div>
-                <h2 className="text-2xl font-bold">{selectedStation?.id}</h2>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 className="text-2xl font-bold">{selectedStation?.id}</h2>
+                  {isMobile && (
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>
+                      {selectedStation?.windDir}°/{selectedStation?.windSpeed}kt
+                      {selectedStation?.temp != null ? ` · ${selectedStation.temp}°C` : ''}
+                    </span>
+                  )}
+                </div>
                 <p className="text-secondary text-sm" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
                   {selectedStation?.name}
                 </p>
               </div>
-              <button
-                className="glass-pill hover-scale"
-                style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--panel-border)', color: 'white', cursor: 'pointer', background: 'transparent' }}
-                onClick={() => setSelectedStation(null)}
-              >
-                <X size={16} />
-              </button>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {isMobile && (
+                  <button
+                    className="glass-pill hover-scale"
+                    style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--panel-border)', color: 'white', cursor: 'pointer', background: 'transparent' }}
+                    onClick={() => setMobilePanelExpanded(e => !e)}
+                  >
+                    {mobilePanelExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                  </button>
+                )}
+                <button
+                  className="glass-pill hover-scale"
+                  style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--panel-border)', color: 'white', cursor: 'pointer', background: 'transparent' }}
+                  onClick={() => setSelectedStation(null)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             <div className="stat-grid">
@@ -1124,7 +1156,7 @@ function App() {
             </div>
           </div>
           
-          {selectedStation && (
+          {selectedStation && (!isMobile || mobilePanelExpanded) && (
              <CrosswindControls
                 windDir={selectedStation.windDir}
                 windSpeed={selectedStation.windSpeed}
@@ -1133,7 +1165,7 @@ function App() {
              />
           )}
 
-          {selectedStation && (
+          {selectedStation && (!isMobile || mobilePanelExpanded) && (
             <TafTimeline
               key={`taf-${selectedStation.id}`}
               tafData={tafData}
@@ -1143,7 +1175,7 @@ function App() {
             />
           )}
 
-          {selectedStation && (
+          {selectedStation && (!isMobile || mobilePanelExpanded) && (
             <NotamPanel
               key={`notam-${selectedStation.id}`}
               notamData={notamData}
@@ -1155,8 +1187,8 @@ function App() {
 
         </div>
 
-        {/* Chat Copilot Widget */}
-        <div className={`chat-copilot-widget ${chatOpen ? 'open' : ''}`} style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: 3000, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'auto' }}>
+        {/* Chat Copilot Widget — hidden on mobile */}
+        <div className={`chat-copilot-widget ${chatOpen ? 'open' : ''}`} style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: 3000, display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'auto' }}>
           {!chatOpen && (
             <button 
               className="glass-panel hover-scale" 

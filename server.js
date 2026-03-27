@@ -532,6 +532,50 @@ app.get('/api/data', (req, res) => {
     res.json(cache);
 });
 
+// ─── Admin (Vercel KV mocked for local dev) ───────────────────────────────────
+
+const DEFAULT_ADMIN_SETTINGS = {
+    fontFamily: 'Inter',
+    accentColor: '#3b82f6',
+    panelOpacity: 0.75,
+    defaultMapStyle: 'dark',
+    defaultAltitude: 'ground',
+    barbSize: 28,
+    runwayFontSize: 13,
+    defaultPanels: { alerts: true, agents: false, weather: false },
+};
+
+let localAdminSettings = { ...DEFAULT_ADMIN_SETTINGS };
+
+app.get('/api/settings', (req, res) => {
+    res.json(localAdminSettings);
+});
+
+app.get('/api/admin', (req, res) => {
+    const secret = req.query.secret || req.headers['x-admin-secret'];
+    if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    // Return mock data — real user list requires Vercel KV in production
+    res.json({
+        users: [],
+        stats: { total: 0, active24h: 0, active7d: 0, withLocation: 0 },
+        settings: localAdminSettings,
+    });
+});
+
+app.post('/api/admin', (req, res) => {
+    const secret = req.query.secret || req.headers['x-admin-secret'];
+    if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { settings } = req.body;
+    if (settings && typeof settings === 'object') {
+        localAdminSettings = { ...DEFAULT_ADMIN_SETTINGS, ...settings };
+    }
+    res.json({ success: true });
+});
+
 app.get('/api/agents', (req, res) => {
     res.json(agentCache);
 });

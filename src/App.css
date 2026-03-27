@@ -327,6 +327,34 @@
     transform: translateX(150%) !important;
   }
 
+  .right-toolbar {
+    -webkit-transition: -webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease !important;
+  }
+  .right-toolbar.mobile-hidden {
+    -webkit-transform: translateX(150%) !important;
+    transform: translateX(150%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Bottom sheet panels on mobile */
+  .mobile-bottom-sheet {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    top: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 70vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 4000 !important;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+  }
+
   .info-panel {
     /* Use absolute (not fixed) — Safari clips position:fixed inside overflow:hidden body */
     position: absolute !important;
@@ -342,6 +370,65 @@
     -webkit-overflow-scrolling: touch;
     z-index: 4000 !important;
     box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+    transition: max-height 0.3s ease !important;
+  }
+
+  /* Compact strip — just the header row */
+  .info-panel.mobile-compact {
+    max-height: 76px !important;
+    overflow: hidden !important;
+  }
+
+  /* Drag-handle pill at top of bottom sheet */
+  .info-panel::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 3px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    margin: 0 auto 6px;
+  }
+
+  /* Tighter typography + spacing inside mobile panel */
+  .info-panel {
+    padding: 10px 14px 14px !important;
+  }
+
+  .info-panel .info-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .info-panel .text-2xl {
+    font-size: 1rem !important;
+    line-height: 1.2;
+  }
+
+  .info-panel .text-sm {
+    font-size: 0.7rem !important;
+  }
+
+  .info-panel .stat-grid {
+    gap: 0.5rem;
+  }
+
+  .info-panel .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .info-panel .stat-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .info-panel .station-meta p {
+    font-size: 0.65rem;
+  }
+
+  .info-panel .glass-pill {
+    width: 26px !important;
+    height: 26px !important;
   }
 
   .chat-copilot-widget {
