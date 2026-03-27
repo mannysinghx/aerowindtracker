@@ -464,6 +464,8 @@ async function fetchAllData() {
             let spd = parseInt(str.substring(2, 4));
             if (isNaN(dir) || isNaN(spd)) return null;
             if (dir >= 500) { dir -= 500; spd += 100; }
+            if (dir === 990 || str.startsWith('9900')) return { windDir: null, windSpeed: 0, temp: null };
+            if (dir > 360 || spd > 250) return null;
             let t = null;
             if (str.length >= 6) {
                 const sign = str[4];
@@ -742,6 +744,8 @@ function fpParseLvl(str) {
     let spd = parseInt(str.substring(2, 4));
     if (isNaN(dir) || isNaN(spd)) return null;
     if (dir >= 500) { dir -= 500; spd += 100; }
+    if (dir === 990 || str.startsWith('9900')) return { windDir: null, windSpeed: 0, temp: null };
+    if (dir > 360 || spd > 250) return null;
     let t = null;
     if (str.length >= 5) {
         const rest = str.substring(4);
