@@ -447,3 +447,12 @@
     width: 100% !important;
   }
 }
+
+/* ── Airspace dot labels ── */
+.airspace-dot-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.airspace-dot-label::before { display: none !important; }

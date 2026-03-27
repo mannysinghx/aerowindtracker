@@ -15,6 +15,7 @@ import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
 import FlightPathPanel from './components/FlightPathPanel';
 import FlightPathLayer from './components/FlightPathLayer';
+import AirspaceDotsLayer from './components/AirspaceDotsLayer';
 import './App.css';
 
 const ALTITUDES = [
@@ -790,6 +791,7 @@ function App() {
             }}
           />
         ))}
+        <AirspaceDotsLayer allAirports={allAirports} />
         {flightRouteData && <FlightPathLayer routeData={flightRouteData} theme={theme} />}
       </MapContainer>
 

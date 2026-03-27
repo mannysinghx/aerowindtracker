@@ -25,7 +25,7 @@ async function buildDb() {
 
     if (country === 'US' && type !== 'closed' && type !== 'heliport' && type !== 'seaplane_base' && type !== 'balloonport') {
       const id = local_code && local_code.length > 0 ? local_code : ident;
-      results.push({ id, name, lat, lon });
+      results.push({ id, name, lat, lon, type });
     }
   }
 
