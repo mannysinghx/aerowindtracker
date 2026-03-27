@@ -1,0 +1,488 @@
+import React, { useState } from 'react';
+import { X, ChevronRight, Clock, Navigation, Wind } from 'lucide-react';
+
+// 30-minute increments in 24-hour local time
+const TIME_OPTIONS = [];
+for (let h = 0; h < 24; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  }
+}
+
+const ALTITUDES = ['surface', '3k', '6k', '9k', '12k', '18k'];
+
+function getWindColor(speed) {
+  if (speed == null) return '#94a3b8';
+  if (speed < 5)  return '#10b981';
+  if (speed < 15) return '#3b82f6';
+  if (speed < 25) return '#f59e0b';
+  if (speed < 40) return '#ef4444';
+  return '#8b5cf6';
+}
+
+function getCatColor(cat) {
+  if (cat === 'VFR')  return '#10b981';
+  if (cat === 'MVFR') return '#3b82f6';
+  if (cat === 'IFR')  return '#ef4444';
+  if (cat === 'LIFR') return '#a855f7';
+  return '#94a3b8';
+}
+
+function WindCell({ dir, speed }) {
+  if (dir == null && speed == null) return <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>—</span>;
+  const color = getWindColor(speed);
+  const rotation = dir != null ? (dir + 180) % 360 : 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      {dir != null && (
+        <svg width="14" height="14" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+          <path d="M7 1L10.5 12L7 10L3.5 12Z" fill={color} transform={`rotate(${rotation} 7 7)`} />
+        </svg>
+      )}
+      <span style={{ fontSize: '0.8rem', fontWeight: 700, color }}>
+        {speed != null ? `${speed}kt` : '—'}
+      </span>
+      {dir != null && (
+        <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{dir}°</span>
+      )}
+    </div>
+  );
+}
+
+function AirportSearch({ label, value, onChange, onSelect, results, theme, isSet }) {
+  const inp = {
+    background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    border: `1px solid ${isSet ? '#10b981' : theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    padding: '8px 10px',
+    width: '100%',
+    outline: 'none',
+    fontSize: '0.85rem',
+    boxSizing: 'border-box',
+  };
+  const drop = {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 200,
+    background: theme === 'dark' ? 'rgba(10,17,34,0.99)' : 'rgba(255,255,255,0.99)',
+    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+    borderRadius: '8px',
+    marginTop: '4px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+    overflow: 'hidden',
+  };
+
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
+        {label}
+      </div>
+      <div style={{ position: 'relative' }}>
+        <input
+          placeholder={label === 'From' ? 'e.g. KSEA' : 'e.g. KLAX'}
+          value={value}
+          onChange={onChange}
+          style={inp}
+        />
+        {results.length > 0 && (
+          <div style={drop}>
+            {results.map(r => (
+              <div
+                key={r.id}
+                onClick={() => onSelect(r)}
+                style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}
+                onMouseEnter={e => e.currentTarget.style.background = theme === 'dark' ? 'rgba(56,189,248,0.1)' : 'rgba(56,189,248,0.07)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#38bdf8' }}>{r.id}</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                  {(r.name || '').substring(0, 28)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WaypointCard({ wp, selectedAlt, theme, isFirst, isLast }) {
+  const isEndpoint = isFirst || isLast;
+  const aloftData = selectedAlt !== 'surface' ? (wp.aloft?.[selectedAlt] ?? null) : null;
+  const surf = wp.surface;
+
+  return (
+    <div style={{
+      padding: '8px 10px',
+      borderRadius: '8px',
+      background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.025)',
+      border: `1px solid ${isEndpoint ? 'rgba(56,189,248,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+    }}>
+      {/* Waypoint header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontWeight: 700, fontSize: '0.82rem', color: isEndpoint ? '#38bdf8' : 'var(--text-primary)', fontFamily: 'monospace' }}>
+            {wp.label}
+          </span>
+          {wp.nearestStation && wp.nearestStation !== wp.label && !isEndpoint && (
+            <span style={{ fontSize: '0.62rem', color: '#64748b' }}>
+              ≈{wp.nearestStation} ({wp.nearestStationDistNm}nm)
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize: '0.68rem', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+          {wp.distFromDep} nm
+        </span>
+      </div>
+
+      {/* Wind data for selected altitude */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '7px' }}>
+        {selectedAlt === 'surface' && surf ? (
+          <>
+            <WindCell dir={surf.windDir} speed={surf.windSpeed} />
+            {surf.windGust && <span style={{ fontSize: '0.68rem', color: '#f59e0b' }}>G{surf.windGust}kt</span>}
+            {surf.temp != null && <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{surf.temp}°C</span>}
+            {surf.flightCategory && (
+              <span style={{ fontSize: '0.62rem', fontWeight: 700, color: getCatColor(surf.flightCategory), padding: '1px 5px', borderRadius: '3px', border: `1px solid ${getCatColor(surf.flightCategory)}` }}>
+                {surf.flightCategory}
+              </span>
+            )}
+            {surf.precip && (
+              <span style={{ fontSize: '0.72rem', color: surf.precip.severity === 'high' ? '#ef4444' : '#f59e0b' }}
+                title={surf.precip.type}>
+                {surf.precip.icon} {surf.precip.type}
+              </span>
+            )}
+            {surf.ceiling != null && (
+              <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{surf.ceiling.toLocaleString()}ft</span>
+            )}
+          </>
+        ) : aloftData ? (
+          <>
+            <WindCell dir={aloftData.windDir} speed={aloftData.windSpeed} />
+            {aloftData.temp != null && (
+              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{aloftData.temp}°C</span>
+            )}
+            {/* Show surface precip warning even at altitude view */}
+            {surf?.precip && (
+              <span style={{ fontSize: '0.68rem', color: '#f59e0b' }} title={surf.precip.type}>
+                {surf.precip.icon}
+              </span>
+            )}
+          </>
+        ) : (
+          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>No data at this altitude</span>
+        )}
+      </div>
+
+      {/* Multi-altitude wind speed color strip */}
+      <div style={{ display: 'flex', gap: '2px', marginBottom: '2px' }}>
+        {['3k', '6k', '9k', '12k', '18k'].map(alt => {
+          const d = wp.aloft?.[alt];
+          const spd = d?.windSpeed ?? null;
+          return (
+            <div
+              key={alt}
+              title={`${alt.toUpperCase()}: ${spd != null ? spd + ' kt' : 'N/A'}`}
+              style={{
+                flex: 1,
+                height: '5px',
+                borderRadius: '3px',
+                background: spd != null ? getWindColor(spd) : (theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'),
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: '2px' }}>
+        {['3k', '6k', '9k', '12k', '18k'].map(alt => (
+          <div key={alt} style={{ flex: 1, fontSize: '0.46rem', color: '#475569', textAlign: 'center', letterSpacing: 0, fontFamily: 'monospace' }}>
+            {alt}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCalculated }) {
+  const [fromQuery, setFromQuery] = useState('');
+  const [toQuery,   setToQuery]   = useState('');
+  const [fromResults, setFromResults] = useState([]);
+  const [toResults,   setToResults]   = useState([]);
+  const [fromAirport, setFromAirport] = useState(null);
+  const [toAirport,   setToAirport]   = useState(null);
+  const [departureTime, setDepartureTime] = useState(() => {
+    // Default to nearest 30-min increment of current local time
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes() < 30 ? '00' : '30';
+    return `${String(h).padStart(2, '0')}:${m}`;
+  });
+  const [loading,   setLoading]   = useState(false);
+  const [routeData, setRouteData] = useState(null);
+  const [error,     setError]     = useState(null);
+  const [selectedAlt, setSelectedAlt] = useState('6k');
+
+  const searchAirports = (query) => {
+    if (!query || query.length < 2) return [];
+    const q = query.toUpperCase();
+    return (allAirports || [])
+      .filter(a => (a.id || '').toUpperCase().includes(q) || (a.name || '').toUpperCase().includes(q))
+      .slice(0, 6);
+  };
+
+  const handleFromChange = e => {
+    const v = e.target.value;
+    setFromQuery(v);
+    setFromAirport(null);
+    setFromResults(searchAirports(v));
+  };
+
+  const handleToChange = e => {
+    const v = e.target.value;
+    setToQuery(v);
+    setToAirport(null);
+    setToResults(searchAirports(v));
+  };
+
+  const selectFrom = airport => {
+    setFromAirport(airport);
+    setFromQuery(airport.id);
+    setFromResults([]);
+  };
+
+  const selectTo = airport => {
+    setToAirport(airport);
+    setToQuery(airport.id);
+    setToResults([]);
+  };
+
+  const calculate = async () => {
+    if (!fromAirport || !toAirport || loading) return;
+    setLoading(true);
+    setError(null);
+    setRouteData(null);
+
+    try {
+      const url = `/api/flightpath?from=${encodeURIComponent(fromAirport.id)}&to=${encodeURIComponent(toAirport.id)}&time=${encodeURIComponent(departureTime)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Route calculation failed');
+      setRouteData(data);
+      if (onRouteCalculated) onRouteCalculated(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearRoute = () => {
+    setRouteData(null);
+    if (onRouteCalculated) onRouteCalculated(null);
+  };
+
+  const panel = {
+    background: theme === 'dark' ? 'rgba(10,17,34,0.97)' : 'rgba(255,255,255,0.98)',
+    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+    borderTop: '3px solid #38bdf8',
+    borderRadius: '12px',
+    padding: '14px',
+    width: '360px',
+    maxHeight: 'calc(100vh - 120px)',
+    overflowY: 'auto',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+  };
+
+  const inputRow = {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'flex-start',
+    marginBottom: '10px',
+  };
+
+  const canCalculate = fromAirport && toAirport && !loading;
+
+  return (
+    <div style={panel}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '10px' }}>
+        <Wind size={15} color="#38bdf8" />
+        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
+          Flight Path Winds
+        </span>
+        <span style={{ fontSize: '0.58rem', color: '#64748b', marginLeft: '2px' }}>BETA</span>
+        <button
+          onClick={() => { clearRoute(); onClose(); }}
+          style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', lineHeight: 1 }}
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      {/* Airport inputs */}
+      <div style={inputRow}>
+        <AirportSearch
+          label="From"
+          value={fromQuery}
+          onChange={handleFromChange}
+          onSelect={selectFrom}
+          results={fromResults}
+          theme={theme}
+          isSet={!!fromAirport}
+        />
+        <div style={{ paddingTop: '22px', flexShrink: 0 }}>
+          <ChevronRight size={14} color="#475569" />
+        </div>
+        <AirportSearch
+          label="To"
+          value={toQuery}
+          onChange={handleToChange}
+          onSelect={selectTo}
+          results={toResults}
+          theme={theme}
+          isSet={!!toAirport}
+        />
+      </div>
+
+      {/* Departure time */}
+      <div style={{ marginBottom: '12px' }}>
+        <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
+          Departure Time (Local 24hr)
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Clock size={13} color="#64748b" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          <select
+            value={departureTime}
+            onChange={e => setDepartureTime(e.target.value)}
+            style={{
+              background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+              border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+              borderRadius: '8px',
+              color: 'var(--text-primary)',
+              padding: '8px 10px 8px 30px',
+              width: '100%',
+              outline: 'none',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+            }}
+          >
+            {TIME_OPTIONS.map(t => (
+              <option key={t} value={t} style={{ background: theme === 'dark' ? '#0f172a' : '#fff' }}>{t}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Calculate button */}
+      <button
+        onClick={calculate}
+        disabled={!canCalculate}
+        style={{
+          width: '100%',
+          padding: '10px',
+          borderRadius: '8px',
+          background: canCalculate ? '#38bdf8' : (theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'),
+          color: canCalculate ? '#0f172a' : '#64748b',
+          border: 'none',
+          fontWeight: 700,
+          fontSize: '0.85rem',
+          cursor: canCalculate ? 'pointer' : 'not-allowed',
+          transition: 'all 0.2s',
+          letterSpacing: '0.3px',
+        }}
+      >
+        {loading ? 'Calculating Route...' : 'Calculate Route Winds'}
+      </button>
+
+      {/* Error */}
+      {error && (
+        <div style={{ marginTop: '10px', padding: '8px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', fontSize: '0.78rem', color: '#ef4444', lineHeight: '1.4' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Results */}
+      {routeData && (
+        <div style={{ marginTop: '14px', borderTop: '1px solid var(--panel-border)', paddingTop: '12px' }}>
+          {/* Route summary */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px',
+            padding: '8px 10px',
+            background: theme === 'dark' ? 'rgba(56,189,248,0.07)' : 'rgba(56,189,248,0.05)',
+            borderRadius: '8px', border: '1px solid rgba(56,189,248,0.15)',
+          }}>
+            <Navigation size={13} color="#38bdf8" style={{ flexShrink: 0 }} />
+            <div style={{ fontSize: '0.78rem', lineHeight: '1.5' }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{routeData.from.icao}</span>
+              <span style={{ color: '#38bdf8', margin: '0 5px' }}>→</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{routeData.to.icao}</span>
+              <span style={{ color: '#64748b', marginLeft: '8px' }}>{routeData.route?.distanceNm} nm</span>
+              <span style={{ color: '#64748b', marginLeft: '5px' }}>· {routeData.route?.bearing}° mag</span>
+              <span style={{ color: '#64748b', marginLeft: '5px' }}>· ETD {routeData.departureTime}</span>
+            </div>
+          </div>
+
+          {/* Altitude selector */}
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>
+              View Altitude
+            </div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              {ALTITUDES.map(alt => (
+                <button
+                  key={alt}
+                  onClick={() => setSelectedAlt(alt)}
+                  style={{
+                    padding: '3px 9px', borderRadius: '5px', fontSize: '0.68rem', fontWeight: 700,
+                    cursor: 'pointer', border: 'none',
+                    background: selectedAlt === alt ? '#38bdf8' : (theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
+                    color: selectedAlt === alt ? '#0f172a' : 'var(--text-secondary)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {alt === 'surface' ? 'SFC' : alt.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Waypoint cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {(routeData.waypoints || []).map((wp, idx) => (
+              <WaypointCard
+                key={wp.index}
+                wp={wp}
+                selectedAlt={selectedAlt}
+                theme={theme}
+                isFirst={idx === 0}
+                isLast={idx === (routeData.waypoints.length - 1)}
+              />
+            ))}
+          </div>
+
+          {/* Wind speed legend */}
+          <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[['< 5', '#10b981'], ['5–15', '#3b82f6'], ['15–25', '#f59e0b'], ['25–40', '#ef4444'], ['> 40', '#8b5cf6']].map(([label, color]) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.6rem', color: '#64748b' }}>
+                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                {label} kt
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: '8px', fontSize: '0.6rem', color: '#475569', lineHeight: '1.4' }}>
+            Data from nearest observation stations. Altitude strip shows wind speed 3k–18k. Not for real-world navigation.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

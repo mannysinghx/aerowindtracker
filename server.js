@@ -718,6 +718,189 @@ app.get('/api/notams', async (req, res) => {
     }
 });
 
+// ─── Flight Path Winds ────────────────────────────────────────────────────────
+
+function fpHaversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function fpCalcBearing(lat1, lon1, lat2, lon2) {
+    const toRad = x => x * Math.PI / 180;
+    const dLon = toRad(lon2 - lon1);
+    const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+    const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dLon);
+    return Math.round(((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360);
+}
+
+function fpParseLvl(str) {
+    if (!str || str.length < 4) return null;
+    let dir = parseInt(str.substring(0, 2)) * 10;
+    let spd = parseInt(str.substring(2, 4));
+    if (isNaN(dir) || isNaN(spd)) return null;
+    if (dir >= 500) { dir -= 500; spd += 100; }
+    let t = null;
+    if (str.length >= 5) {
+        const rest = str.substring(4);
+        const sign = rest[0];
+        const digits = rest.substring(1, 3);
+        if ((sign === '+' || sign === '-') && /^\d+$/.test(digits)) {
+            t = parseInt(digits);
+            if (sign === '-') t = -t;
+        } else {
+            const raw = parseInt(rest.substring(0, 2));
+            if (!isNaN(raw)) t = -Math.abs(raw);
+        }
+    }
+    return { windDir: dir, windSpeed: spd, temp: t };
+}
+
+function fpParsePrecip(wxStr) {
+    if (!wxStr) return null;
+    const s = wxStr.toUpperCase();
+    if (s.includes('TS')) return { type: 'Thunderstorm', severity: 'high', icon: '⛈' };
+    if (s.includes('FZRA') || s.includes('FZDZ')) return { type: 'Freezing Rain', severity: 'high', icon: '🧊' };
+    if (s.includes('+SN') || s.includes('BLSN')) return { type: 'Heavy Snow', severity: 'medium', icon: '❄️' };
+    if (s.includes('SN')) return { type: 'Snow', severity: 'medium', icon: '🌨' };
+    if (s.includes('+RA')) return { type: 'Heavy Rain', severity: 'medium', icon: '🌧' };
+    if (s.includes('-RA')) return { type: 'Light Rain', severity: 'low', icon: '🌦' };
+    if (s.includes('RA')) return { type: 'Rain', severity: 'medium', icon: '🌧' };
+    if (s.includes('DZ')) return { type: 'Drizzle', severity: 'low', icon: '🌦' };
+    if (s.includes('FG') || s.includes('BR')) return { type: 'Fog/Mist', severity: 'medium', icon: '🌫' };
+    return null;
+}
+
+function fpGetCeiling(metar) {
+    for (let i = 1; i <= 3; i++) {
+        const cvg = metar[`cldCvg${i}`];
+        const bas = metar[`cldBas${i}`];
+        if ((cvg === 'BKN' || cvg === 'OVC') && bas != null) return bas;
+    }
+    return null;
+}
+
+function fpFlightCategory(ceiling, visSM) {
+    const c = ceiling ?? Infinity;
+    const v = parseFloat(visSM) || 10;
+    if (c < 500 || v < 1) return 'LIFR';
+    if (c < 1000 || v < 3) return 'IFR';
+    if (c < 3000 || v < 5) return 'MVFR';
+    return 'VFR';
+}
+
+app.get('/api/flightpath', async (req, res) => {
+    const fromIcao = (req.query.from || '').toUpperCase().trim();
+    const toIcao   = (req.query.to   || '').toUpperCase().trim();
+    const time     = req.query.time  || '12:00';
+
+    if (!fromIcao || !toIcao) {
+        return res.status(400).json({ error: 'from and to ICAO codes are required' });
+    }
+
+    try {
+        const AWC = 'https://aviationweather.gov/api/data';
+        const HDRS = { 'User-Agent': 'AeroWindTracker/1.0' };
+
+        const [fromMet, toMet] = await Promise.all([
+            fetch(`${AWC}/metar?ids=${fromIcao}&format=json`, { headers: HDRS }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${AWC}/metar?ids=${toIcao}&format=json`,   { headers: HDRS }).then(r => r.ok ? r.json() : []).catch(() => []),
+        ]);
+
+        if (!fromMet[0]) return res.status(404).json({ error: `No METAR data for ${fromIcao}. Try a major airport.` });
+        if (!toMet[0])   return res.status(404).json({ error: `No METAR data for ${toIcao}. Try a major airport.` });
+
+        const fromLat = fromMet[0].lat, fromLon = fromMet[0].lon;
+        const toLat   = toMet[0].lat,   toLon   = toMet[0].lon;
+
+        const NUM_SEGMENTS = 6;
+        const waypoints = Array.from({ length: NUM_SEGMENTS + 1 }, (_, i) => {
+            const t = i / NUM_SEGMENTS;
+            return {
+                index: i, fraction: t,
+                lat: fromLat + t * (toLat - fromLat),
+                lon: fromLon + t * (toLon - fromLon),
+                label: i === 0 ? fromIcao : i === NUM_SEGMENTS ? toIcao : `WP${i}`,
+            };
+        });
+
+        const totalDistNm = Math.round(fpHaversineKm(fromLat, fromLon, toLat, toLon) * 0.539957);
+        const routeBearing = fpCalcBearing(fromLat, fromLon, toLat, toLon);
+
+        const pad = 3;
+        const bbox = `${Math.min(fromLat,toLat)-pad},${Math.min(fromLon,toLon)-pad},${Math.max(fromLat,toLat)+pad},${Math.max(fromLon,toLon)+pad}`;
+
+        const [metarStations, aloftRaw] = await Promise.all([
+            fetch(`${AWC}/metar?bbox=${bbox}&format=json`, { headers: HDRS }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${AWC}/windtemp?region=all&level=low&fcst=06&format=raw`, { headers: HDRS }).then(r => r.ok ? r.text() : '').catch(() => ''),
+        ]);
+
+        const aloftMap = new Map();
+        for (const line of aloftRaw.split('\n')) {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 5 && /^[A-Z]{3}$/.test(parts[0])) {
+                aloftMap.set(parts[0], {
+                    '3k':  fpParseLvl(parts[1]),
+                    '6k':  fpParseLvl(parts[2]),
+                    '9k':  fpParseLvl(parts[3]),
+                    '12k': fpParseLvl(parts[4]),
+                    '18k': parts[5] ? fpParseLvl(parts[5]) : null,
+                });
+            }
+        }
+
+        const merged = metarStations
+            .filter(m => m.lat != null && m.lon != null)
+            .map(m => ({ ...m, aloft: aloftMap.get((m.icaoId || '').replace(/^K/, '')) || null }));
+
+        const waypointData = waypoints.map(wp => {
+            let nearestMetar = null, nearestDistKm = Infinity;
+            let bestAloft    = null, bestAloftKm   = Infinity;
+            for (const st of merged) {
+                const d = fpHaversineKm(wp.lat, wp.lon, st.lat, st.lon);
+                if (d < nearestDistKm) { nearestDistKm = d; nearestMetar = st; }
+                if (st.aloft && d < bestAloftKm) { bestAloftKm = d; bestAloft = st; }
+            }
+            const ceiling = nearestMetar ? fpGetCeiling(nearestMetar) : null;
+            const visSM   = nearestMetar?.visib ?? 10;
+            const wxStr   = nearestMetar?.wxString || nearestMetar?.wxstring || '';
+            return {
+                ...wp,
+                distFromDep: Math.round(totalDistNm * wp.fraction),
+                nearestStation: nearestMetar?.icaoId || null,
+                nearestStationDistNm: Math.round(nearestDistKm * 0.539957),
+                surface: nearestMetar ? {
+                    windDir:  nearestMetar.wdir ?? null,
+                    windSpeed: nearestMetar.wspd ?? null,
+                    windGust:  nearestMetar.wgst ?? null,
+                    temp:      nearestMetar.temp ?? null,
+                    dewpoint:  nearestMetar.dewp ?? null,
+                    visibility: visSM,
+                    ceiling,
+                    wxString: wxStr,
+                    precip: fpParsePrecip(wxStr),
+                    flightCategory: fpFlightCategory(ceiling, visSM),
+                } : null,
+                aloft: bestAloft?.aloft || null,
+            };
+        });
+
+        res.json({
+            from: { icao: fromIcao, lat: fromLat, lon: fromLon },
+            to:   { icao: toIcao,   lat: toLat,   lon: toLon   },
+            route: { distanceNm: totalDistNm, bearing: routeBearing },
+            departureTime: time,
+            waypoints: waypointData,
+            fetchedAt: new Date().toISOString(),
+        });
+    } catch (e) {
+        console.error('[flightpath]', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Static files + React Router fallback
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use((req, res) => {

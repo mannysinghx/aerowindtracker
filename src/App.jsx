@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings, ChevronUp, ChevronDown, Plane } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
 import { getTimezoneFromLatLon } from './utils/timezone';
@@ -13,6 +13,8 @@ import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOv
 import AboutModal from './components/AboutModal';
 import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
+import FlightPathPanel from './components/FlightPathPanel';
+import FlightPathLayer from './components/FlightPathLayer';
 import './App.css';
 
 const ALTITUDES = [
@@ -109,6 +111,20 @@ function MapController({ targetPos }) {
   return null;
 }
 
+function FlightPathController({ routeData }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!routeData) return;
+    const { from, to } = routeData;
+    const bounds = [
+      [Math.min(from.lat, to.lat) - 0.5, Math.min(from.lon, to.lon) - 0.5],
+      [Math.max(from.lat, to.lat) + 0.5, Math.max(from.lon, to.lon) + 0.5],
+    ];
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 1.8, maxZoom: 9 });
+  }, [routeData, map]);
+  return null;
+}
+
 function PingMarker({ position }) {
   const icon = L.divIcon({
     className: '',
@@ -161,6 +177,10 @@ function App() {
   const [showWeatherPanel, setShowWeatherPanel] = useState(false);
   const [showAlertsPanel, setShowAlertsPanel] = useState(window.innerWidth > 768);
   const [mobilePanelExpanded, setMobilePanelExpanded] = useState(false);
+
+  // Flight Path Winds
+  const [showFlightPathPanel, setShowFlightPathPanel] = useState(false);
+  const [flightRouteData, setFlightRouteData] = useState(null);
 
   // Agent Intelligence Dashboard
   const [showAgentsPanel, setShowAgentsPanel] = useState(false);
@@ -552,6 +572,7 @@ function App() {
         <AgentMapOverlay finding={activeFinding} />
         <BoundsTracker setBounds={setMapBounds} setZoom={setMapZoom} onMapClick={() => { setShowPireps(false); setSelectedStation(null); }} />
         <MapController targetPos={searchTarget} />
+        <FlightPathController routeData={flightRouteData} />
         {pingTarget && <PingMarker position={pingTarget} />}
         {displayPoints.map((point) => {
           const color = getWindColor(point.windSpeed);
@@ -769,6 +790,7 @@ function App() {
             }}
           />
         ))}
+        {flightRouteData && <FlightPathLayer routeData={flightRouteData} theme={theme} />}
       </MapContainer>
 
       <div className="overlay-ui">
@@ -894,12 +916,14 @@ function App() {
             }}>
               {(() => {
                 const openPanel = (key) => {
-                  const isOpen = { weather: showWeatherPanel, alerts: showAlertsPanel, agents: showAgentsPanel, settings: showSettingsPanel }[key];
+                  const isOpen = { weather: showWeatherPanel, alerts: showAlertsPanel, agents: showAgentsPanel, settings: showSettingsPanel, flightpath: showFlightPathPanel }[key];
                   setShowWeatherPanel(key === 'weather' && !isOpen);
                   setShowAlertsPanel(key === 'alerts' && !isOpen);
                   setShowAgentsPanel(key === 'agents' && !isOpen);
                   setShowSettingsPanel(key === 'settings' && !isOpen);
+                  setShowFlightPathPanel(key === 'flightpath' && !isOpen);
                   if (key !== 'agents') { setActiveFinding(null); }
+                  if (key !== 'flightpath' && isOpen) { /* keep route on map when switching panels */ }
                   // On mobile, close the toolbar so the panel is fully visible
                   if (isMobile && !isOpen) setIsMobileMenuOpen(false);
                 };
@@ -907,6 +931,7 @@ function App() {
                   {toolbarBtn(showWeatherPanel, () => openPanel('weather'), <CloudRain size={16} />, 'Weather', wxOverlay.type ? 1 : 0, '14,165,233')}
                   {toolbarBtn(showAlertsPanel, () => openPanel('alerts'), <AlertTriangle size={16} />, 'Alerts', alertFeed.length, '239,68,68')}
                   {toolbarBtn(showAgentsPanel, () => openPanel('agents'), <Bot size={16} />, 'Agents', agentAlertCount || null, '99,102,241')}
+                  {toolbarBtn(showFlightPathPanel, () => openPanel('flightpath'), <Plane size={16} />, 'FltPath', flightRouteData ? 1 : null, '56,189,248')}
                   {toolbarBtn(showSettingsPanel, () => openPanel('settings'), <Settings size={16} />, 'Settings', null, '100,116,139')}
                 </>);
               })()}
@@ -918,6 +943,18 @@ function App() {
         {showWeatherPanel && (
           <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
             <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
+          </div>
+        )}
+
+        {/* ── Flight Path Panel (right side / mobile bottom sheet) ── */}
+        {showFlightPathPanel && (
+          <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
+            <FlightPathPanel
+              theme={theme}
+              allAirports={allAirports}
+              onClose={() => setShowFlightPathPanel(false)}
+              onRouteCalculated={setFlightRouteData}
+            />
           </div>
         )}
 
