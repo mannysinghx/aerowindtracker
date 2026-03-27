@@ -43,6 +43,82 @@ function getWindColor(speed) {
   return '#8b5cf6';
 }
 
+// ── Wind marker style shapes ─────────────────────────────────────────────────
+function windMarkerShape(style, rotation, color, speed, dark) {
+  const r = rotation;
+  const stroke = dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+
+  switch (style) {
+
+    case 'line': // Minimal needle — thin line + arrowhead tip + tail dot
+      return `<g transform="rotate(${r} 16 16)">
+        <line x1="16" y1="25" x2="16" y2="9" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 14L16 7L20 14" fill="${color}" stroke="none"/>
+        <circle cx="16" cy="25" r="2.5" fill="${color}"/>
+      </g>`;
+
+    case 'chevron': // Compact V-shape — least cluttered, clear direction
+      return `<g transform="rotate(${r} 16 16)">
+        <path d="M10 23L16 9L22 23" stroke="${color}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11 17L16 9L21 17" stroke="${color}" stroke-width="2" fill="${color}" fill-opacity="0.35" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`;
+
+    case 'dot': // Speed-coded dot only — maximum density reduction
+      return `<circle cx="16" cy="16" r="7" fill="${color}" opacity="0.88"/>
+        <circle cx="16" cy="16" r="7" fill="none" stroke="${stroke}" stroke-width="1"/>`;
+
+    case 'barb': {
+      // Meteorological wind barb: spine + feathers (5kt=half, 10kt=full, 50kt=pennant)
+      const knots = Math.round((speed || 0) / 5) * 5;
+      let rem = knots;
+      let feathers = '';
+      let y = 9;
+      while (rem >= 50) {
+        feathers += `<path d="M16 ${y} L23 ${y+3} L16 ${y+6}" fill="${color}"/>`;
+        y += 8; rem -= 50;
+      }
+      while (rem >= 10) {
+        feathers += `<line x1="16" y1="${y}" x2="23" y2="${y-3}" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>`;
+        y += 5; rem -= 10;
+      }
+      if (rem >= 5) {
+        feathers += `<line x1="16" y1="${y}" x2="20" y2="${y-1.5}" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>`;
+      }
+      return `<g transform="rotate(${r} 16 16)">
+        <line x1="16" y1="26" x2="16" y2="7" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        ${feathers}
+        <circle cx="16" cy="26" r="2" fill="${color}"/>
+      </g>`;
+    }
+
+    case 'minimal': // Ghost outline arrow — very subtle
+      return `<g transform="rotate(${r} 16 16)">
+        <path d="M16 7L22 24L16 20L10 24Z" stroke="${color}" stroke-width="1.5" fill="${color}" fill-opacity="0.2" stroke-linejoin="round"/>
+      </g>`;
+
+    case 'animated': // Pulsing filled arrow with glow animation
+      return `<style>.wm-anim{animation:wm-pulse 1.8s ease-in-out infinite}@keyframes wm-pulse{0%,100%{opacity:.55}50%{opacity:1}}</style>
+        <g class="wm-anim" transform="rotate(${r} 16 16)" style="transform-origin:16px 16px">
+          <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="none" filter="url(#glow)"/>
+          <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" opacity="0.4" transform="scale(1.25) translate(-4 -4)"/>
+        </g>`;
+
+    default: // 'arrow' — original filled arrowhead (default)
+      return `<path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${r} 16 16)" />`;
+  }
+}
+
+// Style metadata for the picker UI
+const WIND_STYLES = [
+  { id: 'arrow',    label: 'Arrow',    desc: 'Filled arrowhead' },
+  { id: 'chevron',  label: 'Chevron',  desc: 'V-shape, minimal' },
+  { id: 'line',     label: 'Needle',   desc: 'Slim line + tip' },
+  { id: 'minimal',  label: 'Ghost',    desc: 'Outline only' },
+  { id: 'dot',      label: 'Dot',      desc: 'Speed color only' },
+  { id: 'barb',     label: 'Met Barb', desc: 'Aviation standard' },
+  { id: 'animated', label: 'Animated', desc: 'Pulsing glow' },
+];
+
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -170,8 +246,9 @@ function App() {
   // Custom user control for runway labels visibility
   const [runwayFontSize, setRunwayFontSize] = useState(16);
 
-  // Wind barb size
+  // Wind barb size & style
   const [barbSize, setBarbSize] = useState(32);
+  const [barbStyle, setBarbStyle] = useState('arrow');
 
   // Weather overlay
   const [wxOverlay, setWxOverlay] = useState({ type: null, altitude: 'FL090', opacity: 0.65 });
@@ -732,14 +809,17 @@ function App() {
             });
           }
 
+          const shapeSvg = windMarkerShape(barbStyle, rotation, color, point.windSpeed, theme === 'dark');
+          // Dot and minimal styles suppress noisy radial overlays for cleanliness
+          const suppressOverlays = barbStyle === 'dot' || barbStyle === 'minimal' || barbStyle === 'chevron';
           const svgArrow = `
             <div style="width: ${barbSize}px; height: ${barbSize}px;">
               <svg width="${barbSize}" height="${barbSize}" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
                 <g style="pointer-events: auto;">
-                  ${radialBackdrop}
+                  ${suppressOverlays ? '' : radialBackdrop}
                   ${runwaysSvg}
-                  ${radialForeground}
-                  <path d="M16 6L23 25L16 21L9 25L16 6Z" fill="${color}" stroke="${theme === 'dark' ? 'white' : '#1e293b'}" stroke-width="1.5" stroke-linejoin="round" transform="rotate(${rotation} 16 16)" />
+                  ${suppressOverlays ? '' : radialForeground}
+                  ${shapeSvg}
                 </g>
               </svg>
             </div>
@@ -1090,9 +1170,42 @@ function App() {
 
             <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
 
+            {/* Wind Marker Style */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Wind Marker Style</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                {WIND_STYLES.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setBarbStyle(s.id)}
+                    title={s.desc}
+                    style={{
+                      padding: '6px 4px',
+                      borderRadius: '7px',
+                      border: `1px solid ${barbStyle === s.id ? 'var(--accent-color)' : 'var(--panel-border)'}`,
+                      background: barbStyle === s.id ? 'rgba(56,189,248,0.12)' : 'transparent',
+                      color: barbStyle === s.id ? 'var(--accent-color)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontSize: '0.6rem',
+                      fontWeight: barbStyle === s.id ? 700 : 500,
+                      lineHeight: '1.3',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', marginTop: '5px', opacity: 0.7 }}>
+                {WIND_STYLES.find(s => s.id === barbStyle)?.desc}
+              </div>
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
+
             {/* Wind Barb Size */}
             <div>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Wind Barb Size</div>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Wind Marker Size</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="range" min={16} max={64} step={4} value={barbSize}
                   onChange={e => setBarbSize(Number(e.target.value))}
