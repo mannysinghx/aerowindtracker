@@ -506,13 +506,19 @@ function App() {
       targetAirports = stations.map(s => ({ id: s.icaoId, name: s.name || s.icaoId, lat: s.lat, lon: s.lon }));
     }
 
+    // Filter out stations with clearly invalid sensor readings before interpolation
+    const validStations = stations.filter(st =>
+      (st.wdir === null || (st.wdir >= 0 && st.wdir <= 360)) &&
+      (st.wspd === null || (st.wspd >= 0 && st.wspd <= 200))
+    );
+
     const points = [];
 
     for (const ap of targetAirports) {
       if (altitude === 'ground') {
         let nearestDist = Infinity;
         let nearestStation = null;
-        for (const st of stations) {
+        for (const st of validStations) {
           const d = getDistance(ap.lat, ap.lon, st.lat, st.lon);
           if (d < nearestDist) {
             nearestDist = d;
@@ -566,14 +572,47 @@ function App() {
     return points;
   }, [altitude, stations, aloftData, allAirports, mapBounds]);
 
+  // When altitude changes, re-derive the selected station's weather from raw data
+  // (not from displayPoints which is viewport-filtered and can assign a different nearest station)
   useEffect(() => {
-    if (selectedStation) {
-      const updated = displayPoints.find(p => p.id === selectedStation.id);
-      if (updated) {
-        setSelectedStation(updated);
+    if (!selectedStation) return;
+    const ap = { id: selectedStation.id, lat: selectedStation.lat, lon: selectedStation.lon, name: selectedStation.name };
+
+    if (altitude === 'ground') {
+      // Find the exact station first, then nearest
+      let match = stations.find(s => s.icaoId === ap.id || s.icaoId === 'K' + ap.id);
+      if (!match) {
+        let minD = Infinity;
+        for (const st of stations) {
+          const d = getDistance(ap.lat, ap.lon, st.lat, st.lon);
+          if (d < minD) { minD = d; match = st; }
+        }
+      }
+      if (match) {
+        setSelectedStation(prev => ({
+          ...prev,
+          windDir: match.wdir, windSpeed: match.wspd, gusts: match.wgst,
+          temp: match.temp, dew: match.dewp
+        }));
+      }
+    } else {
+      let bestDist = Infinity;
+      let bestLevel = null;
+      for (const aloft of aloftData) {
+        const stObj = stations.find(s => s.icaoId === aloft.icaoId);
+        if (!stObj || !aloft.levels[altitude]) continue;
+        const d = getDistance(ap.lat, ap.lon, stObj.lat, stObj.lon);
+        if (d < bestDist) { bestDist = d; bestLevel = aloft.levels[altitude]; }
+      }
+      if (bestLevel && bestLevel.windSpeed !== null) {
+        setSelectedStation(prev => ({
+          ...prev,
+          windDir: bestLevel.windDir, windSpeed: bestLevel.windSpeed,
+          gusts: null, temp: bestLevel.temp, dew: null
+        }));
       }
     }
-  }, [altitude, displayPoints]);
+  }, [altitude]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e) => {
     const term = e.target.value;
@@ -1080,7 +1119,6 @@ function App() {
                     onClick={() => {
                       if (!loc) return;
                       setSearchTarget([loc.lat, loc.lon]);
-                      setAltitude('3k');
                       setPingTarget([loc.lat, loc.lon]);
                       setTimeout(() => setPingTarget(null), 4000);
                     }}

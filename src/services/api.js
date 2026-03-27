@@ -56,7 +56,12 @@ function parseLvl(str) {
   let dir = parseInt(str.substring(0, 2)) * 10;
   let spd = parseInt(str.substring(2, 4));
   if (isNaN(dir) || isNaN(spd)) return null;
+  // FAA encoding: speeds > 100kt shift dir by +500 (e.g. 7545 = 250° at 145kt)
   if (dir >= 500) { dir -= 500; spd += 100; }
+  // 9900 = calm/light & variable
+  if (dir === 990 || str.startsWith('9900')) return { windDir: null, windSpeed: 0, temp: null };
+  // Reject clearly invalid directions
+  if (dir > 360 || spd > 250) return null;
   let t = null;
   if (str.length >= 6) {
     const sign = str[4];
