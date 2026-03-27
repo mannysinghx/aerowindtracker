@@ -436,6 +436,10 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Route calculation failed');
       setRouteData(data);
+      // Auto-select the altitude tab matching the recommendation
+      if (data.altitudeRecommendation?.altKey) {
+        setSelectedAlt(data.altitudeRecommendation.altKey);
+      }
       if (onRouteCalculated) onRouteCalculated(data);
     } catch (e) {
       setError(e.message);
@@ -479,6 +483,7 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
           Flight Path Winds
         </span>
         <span style={{ fontSize: '0.58rem', color: '#64748b', marginLeft: '2px' }}>BETA</span>
+        <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '3px', padding: '1px 5px', marginLeft: '2px', letterSpacing: '0.4px' }}>VFR ONLY</span>
         <button
           onClick={() => { clearRoute(); onClose(); }}
           style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', lineHeight: 1 }}
@@ -645,8 +650,8 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
             ))}
           </div>
 
-          <div style={{ marginTop: '8px', fontSize: '0.6rem', color: '#475569', lineHeight: '1.4' }}>
-            Data from nearest observation stations. Altitude strip shows wind speed 3k–18k. Not for real-world navigation.
+          <div style={{ marginTop: '8px', padding: '6px 8px', borderRadius: '6px', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', fontSize: '0.6rem', color: '#64748b', lineHeight: '1.5' }}>
+            <span style={{ fontWeight: 700, color: '#10b981' }}>VFR flights only.</span> This tool supports Visual Flight Rules (VFR) planning only — IFR operations not covered. Data from nearest observation stations. Altitude strip shows wind speed 3k–18k. <span style={{ fontWeight: 600 }}>Not for real-world navigation.</span>
           </div>
         </div>
       )}

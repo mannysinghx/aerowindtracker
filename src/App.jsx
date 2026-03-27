@@ -815,6 +815,7 @@ function App() {
             <Wind size={18} color="var(--accent-color)" style={{ animation: 'float 3s ease-in-out infinite' }} />
             <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
             <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
+            <span style={{ color: '#f59e0b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.3px', fontStyle: 'italic' }}>Highly Experimental</span>
           </div>
 
           {/* Center: Search */}
