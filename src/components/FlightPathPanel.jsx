@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, ChevronRight, Clock, Navigation, Wind } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, ChevronRight, Clock, Navigation, Wind, AlertTriangle, CheckCircle, Circle } from 'lucide-react';
 
 // 30-minute increments in 24-hour local time
 const TIME_OPTIONS = [];
@@ -209,6 +210,250 @@ function WaypointCard({ wp, selectedAlt, theme, isFirst, isLast }) {
   );
 }
 
+const IMSAFE = [
+  { key: 'illness',    letter: 'I', label: 'Illness',    statement: 'I have no illness, injury, or physical symptoms that could affect my ability to fly safely.' },
+  { key: 'medication', letter: 'M', label: 'Medication', statement: 'I am not taking any medications or substances that could impair my judgment, vision, or reaction time. (FAR 91.17)' },
+  { key: 'stress',     letter: 'S', label: 'Stress',     statement: 'I am free from significant psychological stress, anxiety, or personal problems that could distract me during flight.' },
+  { key: 'alcohol',    letter: 'A', label: 'Alcohol',    statement: 'I have not consumed alcohol within the last 8 hours and my blood alcohol content is below 0.04%. (FAR 91.17 — "8 hours bottle to throttle")' },
+  { key: 'fatigue',    letter: 'F', label: 'Fatigue',    statement: 'I am adequately rested, alert, and free from fatigue. I have had sufficient sleep in the past 24 hours.' },
+  { key: 'emotion',    letter: 'E', label: 'Emotion',    statement: 'I am emotionally stable, have eaten recently, and am in a positive mental state suitable for pilot-in-command responsibilities.' },
+];
+
+const PREFLIGHT = [
+  { key: 'wx',       label: 'Weather Briefing',     detail: 'Obtained official weather briefing via 1800wxbrief.com, ForeFlight, or Leidos. Reviewed METARs, TAFs, PIREPs, AIRMETs/SIGMETs.' },
+  { key: 'notam',    label: 'NOTAMs Reviewed',       detail: 'Checked NOTAMs for departure, destination, alternates, and all airspace along route.' },
+  { key: 'fuel',     label: 'Fuel Requirements',     detail: 'Verified sufficient fuel for route + VFR reserve (45 min day / 30 min night per FAR 91.151). Fuel aboard confirmed.' },
+  { key: 'alt',      label: 'Alternate Identified',  detail: 'Identified a suitable VFR alternate airport within reasonable range in case destination becomes unflyable.' },
+  { key: 'tfr',      label: 'TFRs Checked',          detail: 'Verified no Temporary Flight Restrictions (TFRs) along or near the planned route via FAA TFR tool.' },
+  { key: 'aircraft', label: 'Aircraft Airworthy',    detail: 'Confirmed aircraft is airworthy, maintenance is current, and all required documents are aboard (ARROW: Airworthiness, Registration, Radio, POH, Operating limitations).' },
+];
+
+function PreflightModal({ routeData, theme, onClose }) {
+  const dark = theme === 'dark';
+  const [imsafe, setImsafe]     = useState({});
+  const [preflight, setPreflight] = useState({});
+
+  const rec = routeData?.altitudeRecommendation;
+  const warnings = rec?.warnings || [];
+  const allImsafe    = IMSAFE.every(i => imsafe[i.key]);
+  const allPreflight = PREFLIGHT.every(p => preflight[p.key]);
+  const allClear = allImsafe && allPreflight;
+
+  const toggle = (setter, key) => setter(prev => ({ ...prev, [key]: !prev[key] }));
+
+  return createPortal(
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.75)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '16px',
+      backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: dark ? 'rgba(10,17,34,0.99)' : 'rgba(255,255,255,0.99)',
+        border: `1px solid rgba(245,158,11,0.4)`,
+        borderTop: '3px solid #f59e0b',
+        borderRadius: '14px',
+        width: '100%',
+        maxWidth: '480px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(245,158,11,0.1)',
+      }}>
+        {/* Header */}
+        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <AlertTriangle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '1px' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>
+              Pre-Flight Briefing Required
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: '1.4' }}>
+              Complete all items before flight. This checklist does not replace official FAA briefings.
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', flexShrink: 0 }}>
+            <X size={15} />
+          </button>
+        </div>
+
+        <div style={{ padding: '14px 18px' }}>
+          {/* Route-specific warnings */}
+          {warnings.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>
+                ⚠ Route Hazards
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {warnings.map((w, i) => {
+                  const c = w.severity === 'critical' ? '#ef4444' : w.severity === 'high' ? '#f97316' : w.severity === 'moderate' ? '#f59e0b' : '#3b82f6';
+                  return (
+                    <div key={i} style={{ padding: '6px 9px', borderRadius: '6px', background: `${c}12`, border: `1px solid ${c}33`, fontSize: '0.7rem', color: c, display: 'flex', gap: '6px', lineHeight: '1.35' }}>
+                      <span style={{ flexShrink: 0 }}>{w.icon || '⚠️'}</span>
+                      <span>{w.message}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Recommended altitude callout */}
+          {rec?.recommendedAltLabel && (
+            <div style={{ marginBottom: '16px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(56,189,248,0.07)', border: '1px solid rgba(56,189,248,0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1rem' }}>✈️</span>
+              <div>
+                <div style={{ fontSize: '0.6rem', color: '#38bdf8', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' }}>Planned Cruise Altitude</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace' }}>{rec.recommendedAltLabel}</div>
+              </div>
+            </div>
+          )}
+
+          {/* IMSAFE */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+              IMSAFE Pilot Self-Assessment
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {IMSAFE.map(item => {
+                const checked = !!imsafe[item.key];
+                return (
+                  <div
+                    key={item.key}
+                    onClick={() => toggle(setImsafe, item.key)}
+                    style={{
+                      display: 'flex', gap: '10px', alignItems: 'flex-start',
+                      padding: '8px 10px', borderRadius: '7px', cursor: 'pointer',
+                      background: checked
+                        ? (dark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.06)')
+                        : (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'),
+                      border: `1px solid ${checked ? 'rgba(16,185,129,0.3)' : (dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)')}`,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: '22px', height: '22px', borderRadius: '50%',
+                      background: checked ? '#10b981' : 'transparent',
+                      border: `2px solid ${checked ? '#10b981' : '#475569'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, transition: 'all 0.15s',
+                    }}>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 900, color: checked ? '#fff' : '#64748b', fontFamily: 'monospace' }}>{item.letter}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: checked ? '#10b981' : 'var(--text-primary)', marginBottom: '2px' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: '#64748b', lineHeight: '1.4' }}>{item.statement}</div>
+                    </div>
+                    <div style={{ flexShrink: 0, marginTop: '1px' }}>
+                      {checked
+                        ? <CheckCircle size={14} color="#10b981" />
+                        : <Circle size={14} color="#475569" />
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Preflight items */}
+          <div style={{ marginBottom: '18px' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+              Preflight Checklist
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {PREFLIGHT.map(item => {
+                const checked = !!preflight[item.key];
+                return (
+                  <div
+                    key={item.key}
+                    onClick={() => toggle(setPreflight, item.key)}
+                    style={{
+                      display: 'flex', gap: '10px', alignItems: 'flex-start',
+                      padding: '8px 10px', borderRadius: '7px', cursor: 'pointer',
+                      background: checked
+                        ? (dark ? 'rgba(56,189,248,0.07)' : 'rgba(56,189,248,0.05)')
+                        : (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'),
+                      border: `1px solid ${checked ? 'rgba(56,189,248,0.25)' : (dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)')}`,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: '16px', height: '16px', borderRadius: '3px', marginTop: '1px',
+                      background: checked ? '#38bdf8' : 'transparent',
+                      border: `2px solid ${checked ? '#38bdf8' : '#475569'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, transition: 'all 0.15s',
+                    }}>
+                      {checked && <span style={{ fontSize: '0.5rem', color: '#0f172a', fontWeight: 900 }}>✓</span>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: checked ? '#38bdf8' : 'var(--text-primary)', marginBottom: '2px' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: '#64748b', lineHeight: '1.4' }}>{item.detail}</div>
+                    </div>
+                    <div style={{ flexShrink: 0, marginTop: '1px' }}>
+                      {checked
+                        ? <CheckCircle size={14} color="#38bdf8" />
+                        : <Circle size={14} color="#475569" />
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div style={{ marginBottom: '14px' }}>
+            {(() => {
+              const iTotal = IMSAFE.length, iDone = IMSAFE.filter(i => imsafe[i.key]).length;
+              const pTotal = PREFLIGHT.length, pDone = PREFLIGHT.filter(p => preflight[p.key]).length;
+              const total = iTotal + pTotal, done = iDone + pDone;
+              const pct = Math.round((done / total) * 100);
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontSize: '0.62rem', color: '#64748b' }}>Briefing completion</span>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: allClear ? '#10b981' : '#f59e0b' }}>{done}/{total} items</span>
+                  </div>
+                  <div style={{ height: '4px', borderRadius: '2px', background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, borderRadius: '2px', background: allClear ? '#10b981' : '#f59e0b', transition: 'width 0.3s' }} />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Acknowledge / dismiss */}
+          <button
+            onClick={onClose}
+            disabled={!allClear}
+            style={{
+              width: '100%', padding: '11px', borderRadius: '8px',
+              background: allClear ? '#10b981' : (dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'),
+              color: allClear ? '#fff' : '#64748b',
+              border: 'none', fontWeight: 700, fontSize: '0.85rem',
+              cursor: allClear ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s', letterSpacing: '0.3px',
+            }}
+          >
+            {allClear ? '✓ Briefing Complete — Ready to Fly' : 'Complete all items above to proceed'}
+          </button>
+
+          <div style={{ marginTop: '8px', fontSize: '0.58rem', color: '#475569', textAlign: 'center', lineHeight: '1.5' }}>
+            This checklist does not replace an official FAA weather briefing or pilot operating handbook procedures.
+            VFR only. Not for real-world navigation.
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function AltitudeRecommendation({ rec, theme }) {
   const [expanded, setExpanded] = useState(false);
   const dark = theme === 'dark';
@@ -389,6 +634,7 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
   const [routeData, setRouteData] = useState(null);
   const [error,     setError]     = useState(null);
   const [selectedAlt, setSelectedAlt] = useState('6k');
+  const [showBriefing, setShowBriefing] = useState(false);
 
   const searchAirports = (query) => {
     if (!query || query.length < 2) return [];
@@ -450,6 +696,7 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
 
   const clearRoute = () => {
     setRouteData(null);
+    setShowBriefing(false);
     if (onRouteCalculated) onRouteCalculated(null);
   };
 
@@ -597,6 +844,33 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
             </div>
           </div>
 
+          {/* Preflight briefing warning button */}
+          <button
+            onClick={() => setShowBriefing(true)}
+            style={{
+              width: '100%', marginBottom: '10px',
+              padding: '9px 12px', borderRadius: '8px',
+              background: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.45)',
+              color: '#f59e0b', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.2px',
+            }}
+          >
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: '#f59e0b',
+              animation: 'briefing-ping 1.6s cubic-bezier(0,0,0.2,1) infinite',
+              flexShrink: 0,
+            }}>
+              <AlertTriangle size={11} color="#0f172a" />
+            </span>
+            <span>Pre-Flight Briefing &amp; IMSAFE Checklist</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#d97706', fontWeight: 400 }}>Required</span>
+          </button>
+          <style>{`@keyframes briefing-ping { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.7)} 50%{box-shadow:0 0 0 7px rgba(245,158,11,0)} }`}</style>
+
           {/* Altitude Recommendation */}
           {routeData.altitudeRecommendation && (
             <AltitudeRecommendation rec={routeData.altitudeRecommendation} theme={theme} />
@@ -654,6 +928,15 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
             <span style={{ fontWeight: 700, color: '#10b981' }}>VFR flights only.</span> This tool supports Visual Flight Rules (VFR) planning only — IFR operations not covered. Data from nearest observation stations. Altitude strip shows wind speed 3k–18k. <span style={{ fontWeight: 600 }}>Not for real-world navigation.</span>
           </div>
         </div>
+      )}
+
+      {/* Preflight briefing modal */}
+      {showBriefing && routeData && (
+        <PreflightModal
+          routeData={routeData}
+          theme={theme}
+          onClose={() => setShowBriefing(false)}
+        />
       )}
     </div>
   );
