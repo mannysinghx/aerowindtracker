@@ -639,7 +639,7 @@ app.get('/api/taf', async (req, res) => {
             if (Array.isArray(fc.clouds)) {
                 for (const l of fc.clouds) {
                     if ((l.cover === 'BKN' || l.cover === 'OVC') && l.base != null) {
-                        const ft = l.base * 100;
+                        const ft = l.base;
                         if (ft < ceilingFt) ceilingFt = ft;
                     }
                 }
@@ -657,7 +657,7 @@ app.get('/api/taf', async (req, res) => {
                 ceiling: ceilingFt === Infinity ? 'Unlimited' : `${ceilingFt.toLocaleString()} ft`,
                 ceilingFt: ceilingFt === Infinity ? null : ceilingFt,
                 weather: fc.wxString || '',
-                clouds: (fc.clouds || []).map(c => `${c.cover}${c.base != null ? c.base * 100 : ''}`).join(' '),
+                clouds: (fc.clouds || []).map(c => `${c.cover}${c.base != null ? c.base : ''}`).join(' '),
                 flightCategory: cat,
             };
         });

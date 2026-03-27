@@ -28,12 +28,12 @@ function flightCategory(ceilingFt, visSM) {
 }
 
 function parsePeriod(fc) {
-  // Extract lowest BKN/OVC ceiling (API returns base in hundreds of feet)
+  // Extract lowest BKN/OVC ceiling (JSON API returns base already in feet)
   let ceilingFt = Infinity;
   if (Array.isArray(fc.clouds)) {
     for (const layer of fc.clouds) {
       if ((layer.cover === 'BKN' || layer.cover === 'OVC') && layer.base != null) {
-        const ft = layer.base * 100;
+        const ft = layer.base;
         if (ft < ceilingFt) ceilingFt = ft;
       }
     }
@@ -61,7 +61,7 @@ function parsePeriod(fc) {
     ceiling: ceilingFt === Infinity ? 'Unlimited' : `${ceilingFt.toLocaleString()} ft`,
     ceilingFt: ceilingFt === Infinity ? null : ceilingFt,
     weather: fc.wxString || '',
-    clouds: (fc.clouds || []).map(c => `${c.cover}${c.base != null ? c.base * 100 : ''}`).join(' '),
+    clouds: (fc.clouds || []).map(c => `${c.cover}${c.base != null ? c.base : ''}`).join(' '),
     flightCategory: cat,
   };
 }
