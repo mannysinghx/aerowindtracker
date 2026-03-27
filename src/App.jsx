@@ -628,7 +628,7 @@ function App() {
   // Pre-calculate the current active runway's numerical heading
   let activeHeading = null;
   if (selectedStation) {
-     const rwys = runwaysData[selectedStation.id];
+     const rwys = runwaysData[selectedStation.id] || runwaysData['K' + selectedStation.id];
      if (rwys && rwys.length > 0) {
         const bestStr = getBestRunway(rwys, selectedStation.windDir);
         if (bestStr) {
@@ -660,7 +660,7 @@ function App() {
           let radialBackdrop = '';
           let radialForeground = '';
           const isSelected = selectedStation && selectedStation.id === point.id;
-          const rwData = runwaysData[point.id] || [];
+          const rwData = runwaysData[point.id] || runwaysData['K' + point.id] || [];
 
           if (isSelected) {
             const radRadius = 130;
@@ -1263,9 +1263,7 @@ function App() {
               <div className="stat-item" style={{ gridColumn: '1 / -1' }}>
                 <div className="stat-label"><Navigation size={14} /> Active Runway (Estimated)</div>
                 <div className="stat-value" style={{ color: 'var(--accent-hover)' }}>
-                  {runwaysData[selectedStation?.id] && runwaysData[selectedStation?.id].length > 0
-                    ? `RWY ${getBestRunway(runwaysData[selectedStation?.id], selectedStation?.windDir) || 'Unknown'}`
-                    : 'No Runway Data'}
+                  {(() => { const rwys = runwaysData[selectedStation?.id] || runwaysData['K' + selectedStation?.id]; return rwys && rwys.length > 0 ? `RWY ${getBestRunway(rwys, selectedStation?.windDir) || 'Unknown'}` : 'No Runway Data'; })()}
                 </div>
               </div>
               <div className="stat-item">
