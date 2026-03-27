@@ -209,6 +209,168 @@ function WaypointCard({ wp, selectedAlt, theme, isFirst, isLast }) {
   );
 }
 
+function AltitudeRecommendation({ rec, theme }) {
+  const [expanded, setExpanded] = useState(false);
+  const dark = theme === 'dark';
+
+  const altFt = rec.recommendedAltLabel || `${rec.recommendedAlt?.toLocaleString()} ft MSL`;
+
+  const severityColor = (sev) => {
+    if (sev === 'critical') return '#ef4444';
+    if (sev === 'high')     return '#f97316';
+    if (sev === 'moderate') return '#f59e0b';
+    return '#3b82f6';
+  };
+
+  const windComp = rec.windComponents?.[rec.altKey];
+  const hasWind = windComp != null;
+  const tailwind = hasWind ? windComp > 0 : null;
+  const windAbs  = hasWind ? Math.abs(Math.round(windComp)) : 0;
+
+  return (
+    <div style={{
+      marginBottom: '12px',
+      borderRadius: '10px',
+      border: `1px solid rgba(56,189,248,0.25)`,
+      overflow: 'hidden',
+      background: dark ? 'rgba(56,189,248,0.04)' : 'rgba(56,189,248,0.04)',
+    }}>
+      {/* Recommended altitude header */}
+      <div
+        onClick={() => setExpanded(e => !e)}
+        style={{
+          padding: '10px 12px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: dark ? 'rgba(56,189,248,0.08)' : 'rgba(56,189,248,0.07)',
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>✈️</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>
+            Recommended Cruise Altitude
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+              {altFt}
+            </span>
+            {hasWind && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: tailwind ? '#10b981' : '#f59e0b' }}>
+                {tailwind ? `▲ ${windAbs}kt tailwind` : `▼ ${windAbs}kt headwind`}
+              </span>
+            )}
+          </div>
+        </div>
+        <span style={{ fontSize: '0.7rem', color: '#64748b', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
+      </div>
+
+      {/* Warnings (always visible) */}
+      {rec.warnings?.length > 0 && (
+        <div style={{ padding: '6px 12px 0 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {rec.warnings.map((w, i) => (
+            <div key={i} style={{
+              padding: '5px 8px',
+              borderRadius: '6px',
+              background: `${severityColor(w.severity)}18`,
+              border: `1px solid ${severityColor(w.severity)}44`,
+              fontSize: '0.7rem',
+              color: severityColor(w.severity),
+              display: 'flex', gap: '6px', alignItems: 'flex-start',
+              lineHeight: '1.35',
+            }}>
+              <span style={{ flexShrink: 0, fontSize: '0.8rem' }}>{w.icon || '⚠️'}</span>
+              <span>{w.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Expandable detail */}
+      {expanded && (
+        <div style={{ padding: '10px 12px' }}>
+          {/* Reasons */}
+          {rec.reasons?.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Why This Altitude
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {rec.reasons.map((r, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: '6px', alignItems: 'flex-start',
+                    fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.4',
+                  }}>
+                    <span style={{ flexShrink: 0 }}>{r.icon || '•'}</span>
+                    <div>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{r.title}: </span>
+                      {r.detail}
+                      {r.rule && (
+                        <span style={{ marginLeft: '4px', fontSize: '0.6rem', color: '#38bdf8', fontFamily: 'monospace' }}>
+                          [{r.rule}]
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Alternative altitudes */}
+          {rec.alternatives?.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Alternatives
+              </div>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {rec.alternatives.map((a, i) => {
+                  const ac = rec.windComponents?.[a.altKey];
+                  const tw = ac != null ? ac > 0 : null;
+                  return (
+                    <div key={i} style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                      border: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                      fontSize: '0.7rem',
+                    }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{a.label}</span>
+                      {ac != null && (
+                        <span style={{ marginLeft: '4px', color: tw ? '#10b981' : '#f59e0b', fontSize: '0.65rem' }}>
+                          {tw ? `+${Math.abs(Math.round(ac))}kt` : `-${Math.abs(Math.round(ac))}kt`}
+                        </span>
+                      )}
+                      {a.note && <span style={{ marginLeft: '4px', color: '#64748b', fontSize: '0.62rem' }}>{a.note}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Compliance notes */}
+          {rec.complianceNotes?.length > 0 && (
+            <div style={{
+              padding: '6px 8px',
+              borderRadius: '6px',
+              background: dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+              border: `1px solid ${dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
+            }}>
+              {rec.complianceNotes.map((n, i) => (
+                <div key={i} style={{ fontSize: '0.62rem', color: '#475569', lineHeight: '1.5', fontFamily: 'monospace' }}>
+                  {n}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCalculated }) {
   const [fromQuery, setFromQuery] = useState('');
   const [toQuery,   setToQuery]   = useState('');
@@ -429,6 +591,11 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
               <span style={{ color: '#64748b', marginLeft: '5px' }}>· ETD {routeData.departureTime}</span>
             </div>
           </div>
+
+          {/* Altitude Recommendation */}
+          {routeData.altitudeRecommendation && (
+            <AltitudeRecommendation rec={routeData.altitudeRecommendation} theme={theme} />
+          )}
 
           {/* Altitude selector */}
           <div style={{ marginBottom: '10px' }}>

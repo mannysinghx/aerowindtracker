@@ -791,6 +791,194 @@ function fpFlightCategory(ceiling, visSM) {
     return 'VFR';
 }
 
+// ─── Altitude Recommendation Engine (mirrors api/flightpath.js) ──────────────
+
+function fpMagVariation(avgLon) {
+    if (avgLon < -115) return 15;
+    if (avgLon < -105) return 12;
+    if (avgLon < -90)  return 4;
+    if (avgLon < -75)  return -8;
+    return -14;
+}
+
+function fpTailwindComponent(windFromDir, windSpeed, routeBearing) {
+    const angle = ((windFromDir - routeBearing + 180) + 360) % 360;
+    return windSpeed * Math.cos(angle * Math.PI / 180);
+}
+
+function fpAltToKey(alt) {
+    if (alt <= 4500)  return '3k';
+    if (alt <= 7000)  return '6k';
+    if (alt <= 10500) return '9k';
+    if (alt <= 15000) return '12k';
+    return '18k';
+}
+
+function fpGetMountainousRegions(waypoints) {
+    const regions = new Set();
+    for (const wp of waypoints) {
+        const { lat, lon } = wp;
+        if (lat >= 31 && lat <= 49 && lon >= -116 && lon <= -102) regions.add('Rocky Mountains');
+        if (lat >= 35 && lat <= 42 && lon >= -123 && lon <= -116) regions.add('Sierra Nevada');
+        if (lat >= 42 && lat <= 49 && lon >= -124 && lon <= -118) regions.add('Cascade Range');
+        if (lat >= 30 && lat <= 37 && lon >= -123 && lon <= -115) regions.add('Coast Ranges (CA)');
+    }
+    return [...regions];
+}
+
+function fpComputeAltitudeRecommendation(trueBearing, distanceNm, waypoints) {
+    const avgLon     = waypoints.reduce((s, w) => s + w.lon, 0) / waypoints.length;
+    const magVar     = fpMagVariation(avgLon);
+    const magBearing = ((trueBearing + magVar) + 360) % 360;
+    const eastbound  = magBearing < 180;
+
+    const vfrSet = eastbound
+        ? [3500, 5500, 7500, 9500, 11500, 13500]
+        : [4500, 6500, 8500, 10500, 12500];
+
+    let distCeil;
+    if (distanceNm < 150)       distCeil = eastbound ? 5500 : 6500;
+    else if (distanceNm < 300)  distCeil = eastbound ? 7500 : 8500;
+    else if (distanceNm < 600)  distCeil = eastbound ? 9500 : 10500;
+    else                        distCeil = eastbound ? 11500 : 12500;
+
+    const mountainRegions = fpGetMountainousRegions(waypoints);
+    let terrainFloor = 0;
+    const terrainWarnings = [];
+    if (mountainRegions.includes('Rocky Mountains')) {
+        terrainFloor = Math.max(terrainFloor, 11500);
+        terrainWarnings.push({ region: 'Rocky Mountains', detail: 'Peaks reach 14,440 ft (Mt. Elbert, CO). Minimum 11,500 ft MSL en route; plan 13,500 ft over highest sections. FAR 91.177 requires 2,000 ft obstacle clearance IFR.' });
+    }
+    if (mountainRegions.includes('Sierra Nevada')) {
+        terrainFloor = Math.max(terrainFloor, 11500);
+        terrainWarnings.push({ region: 'Sierra Nevada', detail: 'Peaks reach 14,505 ft (Mt. Whitney, CA). Minimum 11,500 ft en route; higher may be required over the crest. Check sectional MEFs.' });
+    }
+    if (mountainRegions.includes('Cascade Range')) {
+        terrainFloor = Math.max(terrainFloor, 9500);
+        terrainWarnings.push({ region: 'Cascade Range', detail: 'Mt. Rainier reaches 14,411 ft. Minimum 9,500 ft en route; 11,500+ ft over the crest. Cross ridgelines at 45° angle for escape options.' });
+    }
+    if (mountainRegions.includes('Coast Ranges (CA)')) {
+        terrainFloor = Math.max(terrainFloor, 5500);
+        terrainWarnings.push({ region: 'California Coast Ranges', detail: 'Peaks to ~8,000 ft. Minimum 5,500 ft MSL. Monitor for marine layer and coastal fog.' });
+    }
+
+    let candidates = vfrSet.filter(a => a >= terrainFloor && a <= 18000);
+    if (candidates.length === 0) candidates = vfrSet.filter(a => a >= terrainFloor);
+    const practicalCandidates = candidates.filter(a => a <= Math.max(distCeil, terrainFloor));
+    if (practicalCandidates.length > 0) candidates = practicalCandidates;
+
+    const windAt = {};
+    for (const alt of vfrSet) {
+        const key = fpAltToKey(alt);
+        let sum = 0, n = 0;
+        for (const wp of waypoints) {
+            const d = wp.aloft?.[key];
+            if (d?.windDir != null && d?.windSpeed != null) {
+                sum += fpTailwindComponent(d.windDir, d.windSpeed, trueBearing);
+                n++;
+            }
+        }
+        windAt[alt] = n > 0 ? Math.round(sum / n) : null;
+    }
+
+    const scored = candidates.map(alt => ({
+        alt,
+        windComp: windAt[alt] ?? 0,
+        score: (windAt[alt] ?? 0) + (distanceNm > 300 ? (alt / 1000) * 0.8 : 0),
+    })).sort((a, b) => b.score - a.score);
+
+    const best       = scored[0]?.alt ?? candidates[0];
+    const bestWind   = windAt[best] ?? 0;
+    const bestAltKey = fpAltToKey(best);
+
+    const legalAlts = vfrSet.map(a => `${(a/1000).toFixed(1)}k`).join(' / ');
+    const reasons = [
+        {
+            rule: 'FAR 91.159 — VFR Cruising',
+            icon: '📐',
+            text: `${eastbound ? 'Eastbound' : 'Westbound'} flight (${Math.round(magBearing)}° mag). Above 3,000 ft AGL, VFR aircraft must maintain ${eastbound ? 'odd thousands + 500 ft' : 'even thousands + 500 ft'}. Legal altitudes for this heading: ${legalAlts} ft MSL.`,
+        },
+        {
+            rule: 'Winds Aloft',
+            icon: '💨',
+            text: bestWind > 2
+                ? `Average ${bestWind}-kt tailwind at ${(best/1000).toFixed(1)}k ft along this route. Tailwinds reduce fuel burn and flight time.`
+                : bestWind < -2
+                    ? `Average ${Math.abs(bestWind)}-kt headwind at ${(best/1000).toFixed(1)}k ft. This is the best VFR-legal altitude — consider IFR for ATC altitude flexibility.`
+                    : `Light wind component (${bestWind >= 0 ? '+' : ''}${bestWind} kt avg) at ${(best/1000).toFixed(1)}k ft. Winds are relatively neutral at this altitude.`,
+        },
+        distanceNm >= 150 ? {
+            rule: 'Distance & Efficiency',
+            icon: '📏',
+            text: `${distanceNm} nm route — climbing to ${(best/1000).toFixed(1)}k ft is practical. TAS increases ~${Math.round((best/1000)*2)}% vs sea level. Plan ≈${Math.round(distanceNm/3)} nm of level cruise (1/3 rule).`,
+        } : {
+            rule: 'Distance & Efficiency',
+            icon: '📏',
+            text: `${distanceNm} nm is a shorter leg. A lower cruise altitude keeps descent manageable and avoids unnecessary climb time.`,
+        },
+    ];
+    if (terrainFloor > 0) {
+        reasons.push({
+            rule: 'Terrain Clearance',
+            icon: '⛰️',
+            text: `FAA Part 95 mountainous area(s) on route require minimum ${terrainFloor.toLocaleString()} ft MSL. Always add 1,000–2,000 ft above the highest MEF shown on the sectional chart.`,
+        });
+    }
+
+    const warnings = [];
+    for (const tw of terrainWarnings) {
+        warnings.push({ type: 'terrain', icon: '⛰️', severity: 'high', title: tw.region, text: tw.detail });
+    }
+    const ifrWps = waypoints.filter(wp => wp.surface?.flightCategory === 'IFR' || wp.surface?.flightCategory === 'LIFR');
+    if (ifrWps.length > 0) {
+        warnings.push({ type: 'ifr', icon: '🌫️', severity: 'high', title: 'IFR Conditions En Route',
+            text: `IFR or LIFR at ${ifrWps.length} of ${waypoints.length} waypoints (${ifrWps.map(w => w.label).join(', ')}). VFR may not be possible. Obtain full weather briefing.` });
+    }
+    const precipWps = waypoints.filter(wp => wp.surface?.precip);
+    if (precipWps.length > 0) {
+        const types = [...new Set(precipWps.map(wp => wp.surface.precip.type))];
+        const sev   = precipWps.some(wp => wp.surface.precip.severity === 'high');
+        warnings.push({ type: 'precip', icon: precipWps[0].surface.precip.icon, severity: sev ? 'high' : 'medium',
+            title: 'Precipitation Along Route',
+            text: `${types.join(', ')} at ${precipWps.length} waypoint${precipWps.length > 1 ? 's' : ''}. ${sev ? 'Thunderstorms/freezing precip — avoid or obtain IFR clearance.' : 'Monitor for icing and visibility impacts.'}` });
+    }
+    if (best > 15000) {
+        warnings.push({ type: 'oxygen', icon: '🩸', severity: 'critical', title: 'O₂ All Occupants (FAR 91.211)', text: 'Above 15,000 ft MSL — supplemental O₂ must be available for every person on board.' });
+    } else if (best > 14000) {
+        warnings.push({ type: 'oxygen', icon: '🩸', severity: 'critical', title: 'Crew Oxygen Required (FAR 91.211)', text: 'Above 14,000 ft MSL — crew must use supplemental oxygen for the entire duration.' });
+    } else if (best > 12500) {
+        warnings.push({ type: 'oxygen', icon: '🩸', severity: 'medium', title: 'Oxygen — 30-min Rule (FAR 91.211)', text: 'Above 12,500 ft MSL — crew must use O₂ if time at this altitude exceeds 30 consecutive minutes.' });
+    }
+    if (best >= 16500) {
+        warnings.push({ type: 'airspace', icon: '🚫', severity: 'high', title: 'Approaching Class A (FL180)', text: 'Class A begins at FL180. VFR prohibited. IFR clearance, ADS-B Out, Mode C, and IFR flight plan required. Set 29.92 at FL180.' });
+    }
+
+    const alternatives = scored.slice(1, 3).filter(s => s.alt !== best).map(s => ({
+        alt: s.alt, label: `${s.alt.toLocaleString()} ft MSL`, windComp: windAt[s.alt] ?? 0,
+        note: s.alt < best ? `Shorter climb, less wind advantage` : `Better winds, higher climb cost`,
+    }));
+
+    return {
+        recommendedAlt: best,
+        recommendedAltLabel: `${best.toLocaleString()} ft MSL`,
+        altKey: bestAltKey,
+        magneticBearing: Math.round(magBearing),
+        magneticVariation: magVar,
+        eastbound,
+        reasons,
+        warnings,
+        alternatives,
+        complianceNotes: [
+            `${eastbound ? 'Eastbound' : 'Westbound'} → ${eastbound ? 'odd' : 'even'} thousands + 500 ft (FAR 91.159)`,
+            best <= 12500 ? 'No O₂ req\'d (FAR 91.211)' : best <= 14000 ? 'O₂ req\'d >30 min at altitude (FAR 91.211)' : 'Continuous crew O₂ (FAR 91.211)',
+            best < 18000 ? 'Below FL180 — Class A not entered' : 'FL180+ — IFR only required',
+            mountainRegions.length > 0 ? 'Mountainous terrain: FAA Part 95 MEAs apply' : 'Non-mountainous: standard 1,000 ft obstacle clearance',
+        ],
+        windComponents: Object.fromEntries(vfrSet.map(a => [a, windAt[a]])),
+        terrainRegions: mountainRegions,
+    };
+}
+
 app.get('/api/flightpath', async (req, res) => {
     const fromIcao = (req.query.from || '').toUpperCase().trim();
     const toIcao   = (req.query.to   || '').toUpperCase().trim();
@@ -893,6 +1081,7 @@ app.get('/api/flightpath', async (req, res) => {
             route: { distanceNm: totalDistNm, bearing: routeBearing },
             departureTime: time,
             waypoints: waypointData,
+            altitudeRecommendation: fpComputeAltitudeRecommendation(routeBearing, totalDistNm, waypointData),
             fetchedAt: new Date().toISOString(),
         });
     } catch (e) {
