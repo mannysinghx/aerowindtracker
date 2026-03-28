@@ -138,6 +138,8 @@ function runWindAgent(ground, aloft) {
             if (shearFound >= 6) break outer;
             const a = ground[i], b = ground[j];
             if (!a.wdir || !b.wdir || a.wspd == null || b.wspd == null) continue;
+            // Skip stations with missing or null-island coordinates (lat/lon 0,0)
+            if (!a.lat || !a.lon || !b.lat || !b.lon) continue;
             const dist = haversineKm(a.lat, a.lon, b.lat, b.lon);
             if (dist > 80) continue;
             let dirDiff = Math.abs(a.wdir - b.wdir);
@@ -175,7 +177,7 @@ function runWindAgent(ground, aloft) {
     }
 
     // 3. Extreme surface winds (≥40 kt)
-    for (const s of ground.filter(s => s.wspd >= 40).slice(0, 4)) {
+    for (const s of ground.filter(s => s.wspd >= 40 && s.lat && s.lon).slice(0, 4)) {
         findings.push({
             id: `EW-${s.icaoId}-${ts}`,
             type: 'EXTREME_WIND',
@@ -197,7 +199,7 @@ function runHazardAgent(ground, pireps) {
     const ts = Date.now();
 
     // 1. IFR cluster: 3+ stations within 300 km with visibility < 3 SM
-    const ifrStations = ground.filter(s => s.visib != null && s.visib < 3);
+    const ifrStations = ground.filter(s => s.visib != null && s.visib < 3 && s.lat && s.lon);
     if (ifrStations.length >= 3) {
         let bestCluster = null;
         for (const center of ifrStations) {
@@ -218,7 +220,7 @@ function runHazardAgent(ground, pireps) {
 
     // 2. Structural icing risk: temp −10 to +2°C, dew spread < 4°C
     const icingStations = ground.filter(s =>
-        s.temp != null && s.dewp != null &&
+        s.temp != null && s.dewp != null && s.lat && s.lon &&
         s.temp >= -10 && s.temp <= 2 && (s.temp - s.dewp) < 4
     );
     if (icingStations.length >= 3) {
