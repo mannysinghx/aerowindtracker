@@ -534,6 +534,12 @@ app.get('/api/data', (req, res) => {
     res.json(cache);
 });
 
+app.post('/api/refresh', async (req, res) => {
+    console.log('[manual refresh] Cache flush requested');
+    await fetchAllData();
+    res.json({ ok: true, lastUpdated: cache.lastUpdated });
+});
+
 // ─── Admin (Vercel KV mocked for local dev) ───────────────────────────────────
 
 const DEFAULT_ADMIN_SETTINGS = {

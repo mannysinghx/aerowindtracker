@@ -701,7 +701,7 @@ function App() {
         {pingTarget && <PingMarker position={pingTarget} />}
         {displayPoints.map((point) => {
           const color = getWindColor(point.windSpeed);
-          const rotation = (point.windDir + 180) % 360;
+          const rotation = point.windDir !== null ? (point.windDir + 180) % 360 : 0;
 
           let runwaysSvg = '';
           let radialBackdrop = '';
@@ -1314,7 +1314,13 @@ function App() {
               </div>
               <div className="stat-item">
                 <div className="stat-label"><Navigation size={14} /> Wind</div>
-                <div className="stat-value">{selectedStation?.windDir}° / {selectedStation?.windSpeed}kt</div>
+                <div className="stat-value">
+                  {selectedStation?.windDir === null && selectedStation?.windSpeed === 0
+                    ? 'Calm'
+                    : selectedStation?.windDir !== null && selectedStation?.windSpeed !== null && selectedStation?.windSpeed !== undefined
+                      ? `${selectedStation.windDir}° / ${selectedStation.windSpeed}kt`
+                      : 'N/A'}
+                </div>
               </div>
               <div className="stat-item">
                 <div className="stat-label"><Wind size={14} /> Gusts</div>
