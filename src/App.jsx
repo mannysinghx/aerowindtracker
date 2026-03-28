@@ -642,10 +642,18 @@ function App() {
       return;
     }
     const lowerTerm = term.toLowerCase();
+    // Pilots type ICAO (KSEA) but airports are stored without K prefix (SEA).
+    // Strip leading K so both "KSEA" and "SEA" match the same record.
+    const stripped = lowerTerm.startsWith('k') && lowerTerm.length > 1 ? lowerTerm.slice(1) : null;
 
-    let matches = allAirports.filter(a => a.id.toLowerCase().startsWith(lowerTerm));
+    let matches = allAirports.filter(a => {
+      const id = a.id.toLowerCase();
+      return id.startsWith(lowerTerm) || (stripped && id.startsWith(stripped));
+    });
     if (matches.length < 5) {
-      matches = matches.concat(allAirports.filter(a => a.name && a.name.toLowerCase().includes(lowerTerm) && !matches.find(m => m.id === a.id)));
+      matches = matches.concat(allAirports.filter(a =>
+        a.name && a.name.toLowerCase().includes(lowerTerm) && !matches.find(m => m.id === a.id)
+      ));
     }
     setSearchResults(matches.slice(0, 10));
   };
@@ -982,29 +990,42 @@ function App() {
           </div>
 
           {/* Center: Search */}
-          <div className={`glass-panel ${isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''}`} style={{
+          <div className={isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''} style={{
             position: 'absolute', left: '50%', transform: 'translateX(-50%)',
             width: isMobile ? 'calc(100% - 100px)' : '300px',
-            padding: '7px 12px', borderRadius: '10px', pointerEvents: 'auto', zIndex: 1,
+            pointerEvents: 'auto', zIndex: 2000,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-              <input
-                type="text"
-                placeholder="Search airport (e.g. KSEA)"
-                value={searchTerm}
-                onChange={handleSearch}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.85rem' }}
-              />
+            {/* Input bar */}
+            <div className="glass-panel" style={{ padding: '7px 12px', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="Search airport (e.g. KSEA)"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.85rem' }}
+                />
+              </div>
             </div>
+
+            {/* Dropdown — absolutely positioned below the input bar */}
             {searchResults.length > 0 && (
-              <div style={{ marginTop: '8px', borderTop: '1px solid var(--panel-border)', paddingTop: '4px', maxHeight: '240px', overflowY: 'auto' }}>
+              <div className="glass-panel" style={{
+                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                borderRadius: '10px', padding: '4px 0',
+                maxHeight: '260px', overflowY: 'auto',
+                zIndex: 2001,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+              }}>
                 {searchResults.map(res => (
-                  <div key={res.id} onClick={() => selectAirport(res)} className="hover-glow"
-                    style={{ padding: '7px 8px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
+                  <div key={res.id} onClick={() => selectAirport(res)}
+                    style={{ padding: '8px 12px', cursor: 'pointer', transition: 'background 0.15s' }}
                     onMouseOver={e => e.currentTarget.style.background = theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'}
                     onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{res.id}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      {/^[A-Z]{2,3}$/.test(res.id) ? 'K' + res.id : res.id}
+                    </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.name}</div>
                   </div>
                 ))}
