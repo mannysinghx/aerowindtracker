@@ -546,10 +546,15 @@ function App() {
         for (const aloft of aloftData) {
           const stObj = stations.find(s => s.icaoId === aloft.icaoId);
           if (!stObj) continue;
+          const lvl = aloft.levels[altitude];
+          if (!lvl) continue;
+          // Reject stale/corrupt aloft entries with impossible wind directions
+          if (lvl.windDir !== null && (lvl.windDir < 0 || lvl.windDir > 360)) continue;
+          if (lvl.windSpeed !== null && lvl.windSpeed > 250) continue;
           const d = getDistance(ap.lat, ap.lon, stObj.lat, stObj.lon);
-          if (d < nearestAloftDist && aloft.levels[altitude]) {
+          if (d < nearestAloftDist) {
             nearestAloftDist = d;
-            selectedAloftLevel = aloft.levels[altitude];
+            selectedAloftLevel = lvl;
           }
         }
 
@@ -600,9 +605,12 @@ function App() {
       let bestLevel = null;
       for (const aloft of aloftData) {
         const stObj = stations.find(s => s.icaoId === aloft.icaoId);
-        if (!stObj || !aloft.levels[altitude]) continue;
+        const lvl = aloft.levels?.[altitude];
+        if (!stObj || !lvl) continue;
+        if (lvl.windDir !== null && (lvl.windDir < 0 || lvl.windDir > 360)) continue;
+        if (lvl.windSpeed !== null && lvl.windSpeed > 250) continue;
         const d = getDistance(ap.lat, ap.lon, stObj.lat, stObj.lon);
-        if (d < bestDist) { bestDist = d; bestLevel = aloft.levels[altitude]; }
+        if (d < bestDist) { bestDist = d; bestLevel = lvl; }
       }
       if (bestLevel && bestLevel.windSpeed !== null) {
         setSelectedStation(prev => ({
