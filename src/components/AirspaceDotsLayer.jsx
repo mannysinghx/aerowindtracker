@@ -65,9 +65,9 @@ const CLASS_D_SET = new Set([
 ]);
 
 const CLASS_CONFIG = {
-  B: { color: '#38bdf8', radius: 9,  fillOpacity: 0.85, weight: 2,   minZoom: 5,  label: 'Class B' },
-  C: { color: '#e879f9', radius: 7,  fillOpacity: 0.80, weight: 1.5, minZoom: 7,  label: 'Class C' },
-  D: { color: '#818cf8', radius: 5,  fillOpacity: 0.75, weight: 1,   minZoom: 9,  label: 'Class D' },
+  B: { color: '#38bdf8', radius: 11, fillOpacity: 0.06, weight: 2,   minZoom: 5,  label: 'Class B' },
+  C: { color: '#e879f9', radius: 9,  fillOpacity: 0.06, weight: 1.5, minZoom: 7,  label: 'Class C' },
+  D: { color: '#818cf8', radius: 7,  fillOpacity: 0.05, weight: 1.5, minZoom: 9,  label: 'Class D' },
 };
 
 function getAirspaceClass(airport) {

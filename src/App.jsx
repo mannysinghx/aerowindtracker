@@ -243,8 +243,14 @@ function App() {
   const [searchTarget, setSearchTarget] = useState(null);
   const [searchedAirport, setSearchedAirport] = useState(null);
 
-  // Custom user control for runway labels visibility
-  const [runwayFontSize, setRunwayFontSize] = useState(16);
+  // Airport class filter: 'bcd' = Class B/C/D (large+medium), 'e' = + Class E (small), 'all' = everything
+  const [airportFilter, setAirportFilter] = useState('bcd');
+
+  // Display size controls
+  const [runwayFontSize, setRunwayFontSize] = useState(16);    // runway endpoint text (e.g. "07/25")
+  const [runwayExtLength, setRunwayExtLength] = useState(49);  // orange approach/departure extension length
+  const [airportCodeSize, setAirportCodeSize] = useState(10);  // airport ICAO code label
+  const [showAirportCodes, setShowAirportCodes] = useState(true); // toggle code visibility
 
   // Wind barb size & style
   const [barbSize, setBarbSize] = useState(32);
@@ -482,7 +488,13 @@ function App() {
 
     if (allAirports.length > 0) {
       // We have the massive 16,000 regional DB
-      const activeAirports = allAirports.filter(ap =>
+      // Apply class filter first: B/C/D = large+medium, +E = add small, all = everything
+      const classFiltered = allAirports.filter(ap => {
+        if (airportFilter === 'bcd') return ap.type === 'large_airport' || ap.type === 'medium_airport';
+        if (airportFilter === 'e') return true; // all types (large + medium + small)
+        return true; // 'all'
+      });
+      const activeAirports = classFiltered.filter(ap =>
         ap.lat >= mapBounds.getSouth() - 0.2 &&
         ap.lat <= mapBounds.getNorth() + 0.2 &&
         ap.lon >= mapBounds.getWest() - 0.2 &&
@@ -575,7 +587,7 @@ function App() {
     }
 
     return points;
-  }, [altitude, stations, aloftData, allAirports, mapBounds]);
+  }, [altitude, stations, aloftData, allAirports, mapBounds, airportFilter]);
 
   // When altitude changes, re-derive the selected station's weather from raw data
   // (not from displayPoints which is viewport-filtered and can assign a different nearest station)
@@ -620,7 +632,7 @@ function App() {
         }));
       }
     }
-  }, [altitude]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [altitude, selectedStation?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e) => {
     const term = e.target.value;
@@ -830,11 +842,17 @@ function App() {
               runwaysSvg += `<line x1="16" y1="6" x2="16" y2="26" stroke="${lineColor}" stroke-width="6" transform="rotate(${heading} 16 16)" stroke-linecap="round" />`;
               runwaysSvg += `<line x1="16" y1="7" x2="16" y2="25" stroke="${dashedColor}" stroke-width="1.5" stroke-dasharray="3, 3" transform="rotate(${heading} 16 16)" />`;
 
-              runwaysSvg += `<line x1="16" y1="-45" x2="16" y2="4" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
-              runwaysSvg += `<line x1="16" y1="28" x2="16" y2="77" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
+              // Orange extension lines — length controlled by runwayExtLength
+              // Upper extension: from junction at y=4 up to tip at (4 - extLength)
+              // Lower extension: from junction at y=28 down to tip at (28 + extLength)
+              if (runwayExtLength > 0) {
+                runwaysSvg += `<line x1="16" y1="${4 - runwayExtLength}" x2="16" y2="4" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
+                runwaysSvg += `<line x1="16" y1="28" x2="16" y2="${28 + runwayExtLength}" stroke="${extensionColor}" stroke-width="1.5" stroke-dasharray="4, 4" transform="rotate(${heading} 16 16)" />`;
+              }
 
               const rad = heading * Math.PI / 180;
-              const distOffset = 68 + (runwayFontSize - 11); // Push text further out when larger
+              // Push text just past the extension tip; scale with both extension length and font size
+              const distOffset = Math.max(30, runwayExtLength + 14 + (runwayFontSize - 11));
 
               // Bottom tip corresponds to the threshold for the le_ident
               const le_x = 16 - distOffset * Math.sin(rad);
@@ -857,6 +875,23 @@ function App() {
           }
 
           const shapeSvg = windMarkerShape(barbStyle, rotation, color, point.windSpeed, theme === 'dark');
+
+          // Airport ICAO code label rendered below the wind marker
+          const codeColor = theme === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(15,23,42,0.85)';
+          const codeShadow = theme === 'dark'
+            ? '0 1px 3px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,1)'
+            : '0 1px 2px rgba(255,255,255,0.95), 0 1px 2px rgba(255,255,255,0.95)';
+          // Counter-scale the code text so it stays pixel-constant regardless of barbSize.
+          // The SVG renders at barbSize px but has viewBox 0 0 32 32, so scale = barbSize/32.
+          // To keep font at `airportCodeSize` screen-px: SVG units = airportCodeSize * (32/barbSize).
+          // To keep text 3 screen-px below the marker bottom: SVG y = 32 + 3*(32/barbSize).
+          const svgScale = 32 / barbSize;
+          const codeFontSVG = airportCodeSize * svgScale;
+          const codeYSVG = 32 + 3 * svgScale;
+          const codeSvg = showAirportCodes && airportCodeSize > 0
+            ? `<text x="16" y="${codeYSVG}" fill="${codeColor}" font-size="${codeFontSVG}" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle" dominant-baseline="hanging" style="pointer-events: none; text-shadow: ${codeShadow};">${point.id}</text>`
+            : '';
+
           const svgArrow = `
             <div style="width: ${barbSize}px; height: ${barbSize}px;">
               <svg width="${barbSize}" height="${barbSize}" viewBox="0 0 32 32" style="overflow: visible; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); pointer-events: none;">
@@ -865,6 +900,7 @@ function App() {
                   ${runwaysSvg}
                   ${radialForeground}
                   ${shapeSvg}
+                  ${codeSvg}
                 </g>
               </svg>
             </div>
@@ -1202,13 +1238,88 @@ function App() {
 
             <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
 
-            {/* Runway Label */}
+            {/* Airport Class Filter */}
             <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Runway Labels</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button className="altitude-step" onClick={() => setRunwayFontSize(f => Math.max(8, f - 2))} style={{ fontWeight: 700, width: '28px', height: '28px' }}>A−</button>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, minWidth: '36px', textAlign: 'center' }}>{runwayFontSize}px</span>
-                <button className="altitude-step" onClick={() => setRunwayFontSize(f => Math.min(36, f + 2))} style={{ fontWeight: 700, width: '28px', height: '28px' }}>A+</button>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Airports Shown</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {[
+                  { key: 'bcd', label: 'Class B / C / D', sub: 'Major & regional (~916)', icon: '✈' },
+                  { key: 'e',   label: '+ Class E',        sub: 'Adds towered GA (~16K)', icon: '🛩' },
+                  { key: 'all', label: 'All Airports',     sub: 'Everything incl. private', icon: '⬡' },
+                ].map(({ key, label, sub, icon }) => (
+                  <div key={key} onClick={() => setAirportFilter(key)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '7px 10px', borderRadius: '8px', cursor: 'pointer',
+                      background: airportFilter === key ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${airportFilter === key ? 'var(--accent-color)' : 'var(--panel-border)'}`,
+                      transition: 'all 0.15s',
+                    }}>
+                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>{icon}</span>
+                    <div>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: airportFilter === key ? 'var(--accent-color)' : 'var(--text-primary)' }}>{label}</div>
+                      <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', marginTop: '1px' }}>{sub}</div>
+                    </div>
+                    {airportFilter === key && <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-color)' }} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 0 16px' }} />
+
+            {/* Label & Line Sizes */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>Labels &amp; Lines</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Airport Code</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.6rem', color: showAirportCodes ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: 700 }}>{airportCodeSize}px</span>
+                      <button
+                        onClick={() => setShowAirportCodes(v => !v)}
+                        title={showAirportCodes ? 'Hide airport codes' : 'Show airport codes'}
+                        style={{
+                          padding: '2px 7px', borderRadius: '10px', cursor: 'pointer',
+                          fontSize: '0.58rem', fontWeight: 700, lineHeight: 1.4,
+                          border: `1px solid ${showAirportCodes ? 'var(--accent-color)' : 'var(--panel-border)'}`,
+                          background: showAirportCodes ? 'rgba(56,189,248,0.18)' : 'rgba(255,255,255,0.05)',
+                          color: showAirportCodes ? 'var(--accent-color)' : 'var(--text-secondary)',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {showAirportCodes ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
+                  </div>
+                  <input type="range" min={0} max={18} step={1} value={airportCodeSize}
+                    disabled={!showAirportCodes}
+                    onChange={e => setAirportCodeSize(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--accent-color)', cursor: showAirportCodes ? 'pointer' : 'not-allowed', opacity: showAirportCodes ? 1 : 0.35 }} />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Runway Numbers</span>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: 700 }}>{runwayFontSize}px</span>
+                  </div>
+                  <input type="range" min={8} max={36} step={1} value={runwayFontSize}
+                    onChange={e => setRunwayFontSize(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Approach Lines Length</span>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: 700 }}>{runwayExtLength}px</span>
+                  </div>
+                  <input type="range" min={0} max={120} step={5} value={runwayExtLength}
+                    onChange={e => setRunwayExtLength(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                </div>
+
               </div>
             </div>
 
@@ -1309,7 +1420,12 @@ function App() {
               <div className="stat-item" style={{ gridColumn: '1 / -1' }}>
                 <div className="stat-label"><Navigation size={14} /> Active Runway (Estimated)</div>
                 <div className="stat-value" style={{ color: 'var(--accent-hover)' }}>
-                  {(() => { const rwys = runwaysData[selectedStation?.id] || runwaysData['K' + selectedStation?.id]; return rwys && rwys.length > 0 ? `RWY ${getBestRunway(rwys, selectedStation?.windDir) || 'Unknown'}` : 'No Runway Data'; })()}
+                  {(() => {
+                    const rwys = runwaysData[selectedStation?.id] || runwaysData['K' + selectedStation?.id];
+                    if (!rwys || rwys.length === 0) return 'No Runway Data';
+                    if (selectedStation?.windDir === null && selectedStation?.windSpeed === 0) return 'Calm — any runway';
+                    return `RWY ${getBestRunway(rwys, selectedStation?.windDir) || 'Unknown'}`;
+                  })()}
                 </div>
               </div>
               <div className="stat-item">
@@ -1394,6 +1510,42 @@ function App() {
             />
           )}
 
+        </div>
+
+        {/* ── Airport Class Filter Strip (bottom-center of map) ── */}
+        <div className="ui-element" style={{
+          position: 'absolute', bottom: '28px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 1200, pointerEvents: 'auto', display: 'flex', gap: '0',
+          background: theme === 'dark' ? 'rgba(15,23,42,0.88)' : 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid var(--panel-border)', borderRadius: '30px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)', overflow: 'hidden',
+        }}>
+          {[
+            { key: 'bcd', short: 'B / C / D', tooltip: 'Major & regional airports' },
+            { key: 'e',   short: '+ Class E',  tooltip: 'Add small GA airports' },
+            { key: 'all', short: 'All',         tooltip: 'All airports incl. private' },
+          ].map(({ key, short, tooltip }, idx, arr) => (
+            <button
+              key={key}
+              title={tooltip}
+              onClick={() => setAirportFilter(key)}
+              style={{
+                padding: '7px 14px',
+                border: 'none',
+                borderLeft: idx > 0 ? '1px solid var(--panel-border)' : 'none',
+                background: airportFilter === key
+                  ? 'var(--accent-color)'
+                  : 'transparent',
+                color: airportFilter === key ? '#fff' : 'var(--text-secondary)',
+                fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.5px',
+                cursor: 'pointer', transition: 'all 0.18s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {short}
+            </button>
+          ))}
         </div>
 
         {/* Chat Copilot Widget — hidden on mobile */}
