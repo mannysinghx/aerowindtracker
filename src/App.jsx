@@ -1318,16 +1318,24 @@ function App() {
               </div>
               <div className="stat-item">
                 <div className="stat-label"><Wind size={14} /> Gusts</div>
-                <div className="stat-value">{selectedStation?.gusts ? `${selectedStation.gusts}kt` : 'N/A'}</div>
+                <div className="stat-value">{altitude === 'ground' ? (selectedStation?.gusts ? `${selectedStation.gusts}kt` : 'N/A') : <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Surface only</span>}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-label"><Thermometer size={14} /> Temp</div>
-                <div className="stat-value">{selectedStation?.temp !== null && selectedStation?.temp !== undefined ? `${selectedStation.temp}°C / ${Math.round((selectedStation.temp * 9 / 5) + 32)}°F` : 'N/A'}</div>
+                <div className="stat-value">
+                  {selectedStation?.temp !== null && selectedStation?.temp !== undefined
+                    ? `${selectedStation.temp}°C / ${Math.round((selectedStation.temp * 9 / 5) + 32)}°F`
+                    : altitude === '3k'
+                      ? <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Not in FAA 3K forecast</span>
+                      : 'N/A'}
+                </div>
               </div>
-              <div className="stat-item">
-                <div className="stat-label"><Droplets size={14} /> Dew Point</div>
-                <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9 / 5) + 32)}°F` : 'N/A'}</div>
-              </div>
+              {altitude === 'ground' && (
+                <div className="stat-item">
+                  <div className="stat-label"><Droplets size={14} /> Dew Point</div>
+                  <div className="stat-value">{selectedStation?.dew !== null && selectedStation?.dew !== undefined ? `${selectedStation.dew}°C / ${Math.round((selectedStation.dew * 9 / 5) + 32)}°F` : 'N/A'}</div>
+                </div>
+              )}
               <div className="stat-item" style={{ gridColumn: '1 / -1', marginTop: '5px' }}>
                 <button
                    onClick={(e) => { e.stopPropagation(); setShowPireps(!showPireps); }}
