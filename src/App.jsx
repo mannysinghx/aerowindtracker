@@ -1192,9 +1192,11 @@ function App() {
         {showSettingsPanel && (
           <div className={`glass-panel ui-element${isMobile ? ' mobile-bottom-sheet' : ''}`} style={isMobile ? {
             padding: '16px', pointerEvents: 'auto',
+            maxHeight: '70vh', overflowY: 'auto',
           } : {
             position: 'absolute', top: '70px', right: '70px',
             padding: '16px', zIndex: 1050, pointerEvents: 'auto', minWidth: '200px',
+            maxHeight: 'calc(100vh - 90px)', overflowY: 'auto',
           }}>
             <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '14px' }}>Settings</div>
 
