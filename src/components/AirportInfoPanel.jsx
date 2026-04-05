@@ -353,40 +353,11 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
             <div>
               <SectionLabel icon={<Radio size={12} />} label="Communications" textSecondary={textSecondary} />
               {loading ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                  {[80, 110, 90, 95, 105].map(w => <Skeleton key={w} width={`${w}px`} height="44px" />)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                  {[1,2,3,4,5].map(i => <Skeleton key={i} width="100%" height="30px" />)}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                  {airportData.frequencies.map((f, i) => {
-                    const label = freqTypeLabel(f.rawType ?? f.type);
-                    const st = freqBadgeStyle(label);
-                    const subtitle = extractSubtitle(label, f.description);
-                    return (
-                      <div
-                        key={i}
-                        title={f.description || label}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          padding: '5px 10px', borderRadius: '8px', minWidth: '72px',
-                          background: st.bg, border: `1px solid ${st.border}`,
-                        }}
-                      >
-                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: st.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {label}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f8fafc', marginTop: '1px' }}>
-                          {f.mhz.toFixed(3)}
-                        </span>
-                        {subtitle && (
-                          <span style={{ fontSize: '0.58rem', color: st.text, opacity: 0.85, marginTop: '2px', letterSpacing: '0.02em' }}>
-                            {subtitle}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <CommList frequencies={airportData.frequencies} textSecondary={textSecondary} borderCol={borderCol} />
               )}
             </div>
           )}
@@ -404,6 +375,132 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Strip redundant airport-name + type-code prefix from a frequency description,
+// returning the "extra info" part (sector, runway, complex, etc.) or null if nothing new.
+function descHint(raw) {
+  if (!raw) return null;
+  // Remove leading ALL-CAPS words (airport name) up through the first type keyword
+  const stripped = raw
+    .replace(/^[A-Z0-9\s\-/'\.]+?\s(?=ATIS|TWR|GND|APP|DEP|CLNC|DEL|CTR|UNIC|CTAF|ASOS|AWOS|FSS)/i, '')
+    .replace(/^(ATIS|TWR|GND|APP|DEP|CLNC|DEL|CTR|UNIC|CTAF|ASOS|AWOS|FSS)\s*/i, '')
+    .trim();
+  return stripped.length > 1 ? stripped : null;
+}
+
+// Type-groups for Communications: frequencies grouped by their friendly label.
+// Displayed as: colored TYPE pill | MHz (mono) | description hint
+function CommList({ frequencies, textSecondary, borderCol }) {
+  // Group consecutive same-type frequencies; preserve overall FREQ_ORDER sort.
+  const groups = [];
+  for (const f of frequencies) {
+    const label = freqTypeLabel(f.rawType ?? f.type);
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) {
+      last.entries.push(f);
+    } else {
+      groups.push({ label, entries: [f] });
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '6px' }}>
+      {groups.map((group, gi) => {
+        const st = freqBadgeStyle(group.label);
+        return (
+          <div
+            key={gi}
+            style={{
+              borderRadius: '9px',
+              border: `1px solid ${st.border}`,
+              overflow: 'hidden',
+              background: group.entries.length === 1 ? st.bg : 'rgba(255,255,255,0.02)',
+            }}
+          >
+            {/* Group header — only shown when multiple frequencies share a type */}
+            {group.entries.length > 1 && (
+              <div style={{
+                padding: '3px 10px',
+                background: st.bg,
+                borderBottom: `1px solid ${st.border}`,
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}>
+                <span style={{
+                  fontSize: '0.58rem', fontWeight: 800, color: st.text,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                }}>
+                  {group.label}
+                </span>
+                <span style={{ fontSize: '0.58rem', color: st.text, opacity: 0.55 }}>
+                  {group.entries.length} frequencies
+                </span>
+              </div>
+            )}
+
+            {/* Frequency rows */}
+            {group.entries.map((f, fi) => {
+              const hint = descHint(f.description);
+              return (
+                <div
+                  key={fi}
+                  title={f.description || group.label}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '6px 10px',
+                    borderTop: fi > 0 ? `1px solid ${st.border}` : 'none',
+                  }}
+                >
+                  {/* Type pill — only shown for single-entry groups */}
+                  {group.entries.length === 1 && (
+                    <span style={{
+                      flex: '0 0 auto', minWidth: '60px', textAlign: 'center',
+                      padding: '2px 6px', borderRadius: '5px',
+                      background: st.bg, border: `1px solid ${st.border}`,
+                      fontSize: '0.58rem', fontWeight: 700, color: st.text,
+                      textTransform: 'uppercase', letterSpacing: '0.06em',
+                    }}>
+                      {group.label}
+                    </span>
+                  )}
+
+                  {/* MHz */}
+                  <span style={{
+                    fontFamily: '"SF Mono", "Fira Code", monospace',
+                    fontSize: '0.8rem', fontWeight: 700, color: '#f8fafc',
+                    flex: '0 0 auto',
+                    // indent sub-rows of a group to align under the header
+                    marginLeft: group.entries.length > 1 ? '4px' : 0,
+                  }}>
+                    {f.mhz.toFixed(3)}
+                  </span>
+
+                  {/* Description hint */}
+                  {hint ? (
+                    <span style={{
+                      fontSize: '0.65rem', color: st.text, opacity: 0.75,
+                      flex: 1, overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {hint}
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.65rem', color: textSecondary, opacity: 0.5,
+                      flex: 1, overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {f.description || ''}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
