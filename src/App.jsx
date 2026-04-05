@@ -4,11 +4,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings, ChevronUp, ChevronDown, Plane } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
-import { fetchLiveAIData, fetchTaf, fetchNotams } from './services/api';
+import { fetchLiveAIData, fetchTaf, fetchNotams, fetchAirportInfo } from './services/api';
 import { getTimezoneFromLatLon } from './utils/timezone';
 import CrosswindControls from './components/CrosswindControls';
 import TafTimeline from './components/TafTimeline';
 import NotamPanel from './components/NotamPanel';
+import AirportInfoPanel from './components/AirportInfoPanel';
 import { WeatherOverlayLayer, WeatherOverlayPanel } from './components/WeatherOverlay';
 import AboutModal from './components/AboutModal';
 import AgentDashboard from './components/AgentDashboard';
@@ -312,11 +313,16 @@ function App() {
   const [notamData, setNotamData] = useState(null);
   const [notamLoading, setNotamLoading] = useState(false);
 
-  // Fetch TAF and NOTAMs whenever the selected airport changes
+  // Airport info state (elevation, city, state, frequencies, runway surfaces)
+  const [airportInfo, setAirportInfo] = useState(null);
+  const [airportInfoLoading, setAirportInfoLoading] = useState(false);
+
+  // Fetch TAF, NOTAMs, and airport info whenever the selected airport changes
   useEffect(() => {
     if (!selectedStation?.id) {
       setTafData(null);
       setNotamData(null);
+      setAirportInfo(null);
       return;
     }
     const icao = selectedStation.id;
@@ -331,6 +337,13 @@ function App() {
     fetchNotams(icao).then(data => {
       setNotamData(data);
       setNotamLoading(false);
+    });
+
+    setAirportInfoLoading(true);
+    setAirportInfo(null);
+    fetchAirportInfo(icao).then(data => {
+      setAirportInfo(data);
+      setAirportInfoLoading(false);
     });
   }, [selectedStation?.id]);
 
@@ -1511,6 +1524,15 @@ function App() {
                 runwayHeading={activeHeading}
                 theme={theme}
              />
+          )}
+
+          {selectedStation && (!isMobile || mobilePanelExpanded) && (
+            <AirportInfoPanel
+              key={`apt-${selectedStation.id}`}
+              airportData={airportInfo}
+              loading={airportInfoLoading}
+              theme={theme}
+            />
           )}
 
           {selectedStation && (!isMobile || mobilePanelExpanded) && (
