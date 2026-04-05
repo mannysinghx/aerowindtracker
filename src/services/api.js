@@ -167,6 +167,14 @@ async function fetchMetarDirect() {
   return unique;
 }
 
+export async function fetchAirportInfo(icao) {
+  try {
+    const res = await fetch(`/api/airport?icao=${encodeURIComponent(icao)}`);
+    if (res.ok) return await res.json();
+  } catch { /* server offline */ }
+  return null;
+}
+
 export async function fetchTaf(icao) {
   try {
     const res = await fetch(`/api/taf?icao=${encodeURIComponent(icao)}`);
