@@ -150,7 +150,7 @@ async function lookupAirport(icao) {
     if (isNaN(mhz)) continue;
     const key = fType;
     if (!freqsByType[key]) freqsByType[key] = [];
-    freqsByType[key].push({ type: freqLabel(fType), description: desc, mhz });
+    freqsByType[key].push({ type: freqLabel(fType), rawType: fType, description: desc, mhz });
   }
 
   const frequencies = Object.entries(freqsByType)
