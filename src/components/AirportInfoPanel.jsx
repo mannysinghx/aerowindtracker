@@ -44,70 +44,105 @@ function surfaceLabel(raw) {
 }
 
 // OurAirports frequency type codes → friendly display labels
+// Mirrors the mapping in api/airport.js
 const FREQ_TYPE_LABEL = {
-  ATIS:    'ATIS',
-  ASOS:    'ASOS',
-  AWOS:    'AWOS',
-  AWOS3:   'AWOS',
-  AWIS:    'AWIS',
-  CTAF:    'CTAF',
-  UNICOM:  'UNICOM',
-  UNIC:    'UNICOM',
-  UNI:     'UNICOM',
-  GND:     'Ground',
-  GROUND:  'Ground',
-  TWR:     'Tower',
-  TOWER:   'Tower',
-  APP:     'Approach',
-  APCH:    'Approach',
-  DEP:     'Departure',
-  CLNC:    'Clnc Del',
-  CLD:     'Clnc Del',
-  CD:      'Clnc Del',
-  CNTR:    'Center',
-  CTR:     'Center',
-  CENTER:  'Center',
-  OPS:     'Operations',
-  OPER:    'Operations',
-  RDO:     'Radio',
-  RADIO:   'Radio',
-  FSS:     'FSS',
-  MULTICOM:'Multicom',
-  EMERG:   'Emergency',
+  ATIS:         'ATIS',
+  'D-ATIS':     'D-ATIS',
+  ASOS:         'ASOS',
+  AWOS:         'AWOS',
+  'AWOS-3':     'AWOS',
+  AWOS3:        'AWOS',
+  AWIS:         'AWIS',
+  CTAF:         'CTAF',
+  'CTAF/UNICOM':'CTAF',
+  UNICOM:       'UNICOM',
+  UNIC:         'UNICOM',
+  UNI:          'UNICOM',
+  GND:          'Ground',
+  GROUND:       'Ground',
+  GRN:          'Ground',
+  GRD:          'Ground',
+  TWR:          'Tower',
+  TOWER:        'Tower',
+  APP:          'Approach',
+  APCH:         'Approach',
+  APPR:         'Approach',
+  'APP/DEP':    'App/Dep',
+  'A/D':        'App/Dep',
+  'APP/TWR':    'App/Twr',
+  'TWR/APP':    'App/Twr',
+  DEP:          'Departure',
+  CLNC:         'Clnc Del',
+  CLD:          'Clnc Del',
+  CD:           'Clnc Del',
+  DEL:          'Clnc Del',
+  DELIVERY:     'Clnc Del',
+  CNTR:         'Center',
+  CTR:          'Center',
+  CENTER:       'Center',
+  ACC:          'Area Ctrl',
+  OPS:          'Operations',
+  OPER:         'Operations',
+  FSS:          'FSS',
+  RCO:          'FSS',
+  RDO:          'Radio',
+  RADIO:        'Radio',
+  'A/G':        'Air/Ground',
+  INFO:         'Information',
+  AFIS:         'Flight Info',
+  ATF:          'Traffic Freq',
+  EMR:          'Emergency',
+  EMERG:        'Emergency',
+  MULTICOM:     'Multicom',
 };
 
 function freqTypeLabel(raw) {
-  return FREQ_TYPE_LABEL[raw.toUpperCase()] ?? raw;
+  if (!raw) return raw;
+  return FREQ_TYPE_LABEL[raw.toUpperCase()] ?? FREQ_TYPE_LABEL[raw] ?? raw;
 }
 
 // Frequency badge color themes
 const FREQ_COLORS = {
-  ATIS:       { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
-  ASOS:       { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
-  AWOS:       { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
-  Tower:      { bg: 'rgba(34,197,94,0.15)',  border: '#22c55e', text: '#86efac' },
-  Ground:     { bg: 'rgba(59,130,246,0.15)', border: '#3b82f6', text: '#93c5fd' },
-  Approach:   { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
-  Departure:  { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
-  CTAF:       { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
-  UNICOM:     { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
-  'Clnc Del': { bg: 'rgba(168,85,247,0.15)', border: '#a855f7', text: '#d8b4fe' },
-  Center:     { bg: 'rgba(20,184,166,0.15)', border: '#14b8a6', text: '#5eead4' },
-  Operations: { bg: 'rgba(156,163,175,0.15)',border: '#6b7280', text: '#d1d5db' },
-  FSS:        { bg: 'rgba(244,63,94,0.15)',  border: '#f43f5e', text: '#fda4af' },
+  ATIS:         { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
+  'D-ATIS':     { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
+  ASOS:         { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
+  AWOS:         { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
+  Tower:        { bg: 'rgba(34,197,94,0.15)',  border: '#22c55e', text: '#86efac' },
+  'App/Twr':    { bg: 'rgba(34,197,94,0.15)',  border: '#22c55e', text: '#86efac' },
+  Ground:       { bg: 'rgba(59,130,246,0.15)', border: '#3b82f6', text: '#93c5fd' },
+  Approach:     { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
+  Departure:    { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
+  'App/Dep':    { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
+  CTAF:         { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
+  UNICOM:       { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
+  'Clnc Del':   { bg: 'rgba(168,85,247,0.15)', border: '#a855f7', text: '#d8b4fe' },
+  Center:       { bg: 'rgba(20,184,166,0.15)', border: '#14b8a6', text: '#5eead4' },
+  'Area Ctrl':  { bg: 'rgba(20,184,166,0.15)', border: '#14b8a6', text: '#5eead4' },
+  Operations:   { bg: 'rgba(156,163,175,0.15)',border: '#6b7280', text: '#d1d5db' },
+  'Air/Ground': { bg: 'rgba(156,163,175,0.15)',border: '#6b7280', text: '#d1d5db' },
+  FSS:          { bg: 'rgba(244,63,94,0.15)',  border: '#f43f5e', text: '#fda4af' },
+  Emergency:    { bg: 'rgba(239,68,68,0.2)',   border: '#ef4444', text: '#fca5a5' },
 };
 
 function freqBadgeStyle(label) {
   return FREQ_COLORS[label] ?? { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', text: '#94a3b8' };
 }
 
-// Extract a runway designator from a frequency description string.
-// e.g. "Tower 16L/34R" → "16L/34R", "Rwy 34L" → "34L", "PAINE TWR 34" → "34"
-function extractRunway(desc) {
-  if (!desc) return null;
-  // Match patterns like "16L/34R", "16L-34R", "RWY 16", "34L", etc.
-  const m = desc.match(/\b(\d{1,2}[LRC]?(?:[/-]\d{1,2}[LRC]?)?)\b/);
-  return m ? m[1] : null;
+// For Tower/Approach/Departure/App+Dep: extract a useful subtitle from the description.
+// Priority: runway designator (16L/34R) → compass direction (North/South) → nothing.
+const SUBTITLE_TYPES = new Set(['Tower', 'Approach', 'Departure', 'App/Dep', 'App/Twr']);
+function extractSubtitle(label, desc) {
+  if (!desc || !SUBTITLE_TYPES.has(label)) return null;
+  // 1. Runway pattern: "16L/34R", "14R-32L", "(Rwy 16)", "ORRY 16L/34R"
+  const rwy = desc.match(/\b(\d{1,2}[LRC]?(?:[/\-]\d{1,2}[LRC]?)?)\b/);
+  if (rwy) return `RWY ${rwy[1]}`;
+  // 2. Compass sector: NORTH / SOUTH / EAST / WEST / NE / NW / SE / SW
+  const dir = desc.toUpperCase().match(/\b(NORTH|SOUTH|EAST|WEST|NE|NW|SE|SW)\b/);
+  if (dir) {
+    const d = dir[1];
+    return d.length <= 2 ? d : d[0] + d.slice(1).toLowerCase(); // "North", "NW"
+  }
+  return null;
 }
 
 // Standard FAA Traffic Pattern Altitudes (AGL) by aircraft category.
@@ -326,10 +361,7 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
                   {airportData.frequencies.map((f, i) => {
                     const label = freqTypeLabel(f.rawType ?? f.type);
                     const st = freqBadgeStyle(label);
-                    // For tower/approach/departure, try to show which runway from description
-                    const runwayHint = ['Tower', 'Approach', 'Departure'].includes(label)
-                      ? extractRunway(f.description)
-                      : null;
+                    const subtitle = extractSubtitle(label, f.description);
                     return (
                       <div
                         key={i}
@@ -346,9 +378,9 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f8fafc', marginTop: '1px' }}>
                           {f.mhz.toFixed(3)}
                         </span>
-                        {runwayHint && (
+                        {subtitle && (
                           <span style={{ fontSize: '0.58rem', color: st.text, opacity: 0.85, marginTop: '2px', letterSpacing: '0.02em' }}>
-                            RWY {runwayHint}
+                            {subtitle}
                           </span>
                         )}
                       </div>
