@@ -35,11 +35,16 @@ export function parseLvl(str) {
 /** Fetch and deduplicate METARs across all 6 continental US bounding boxes. */
 export async function fetchMETARs() {
   const results = await Promise.all(
-    BBOXES.map(box =>
-      fetch(`https://aviationweather.gov/api/data/metar?bbox=${box}&format=json`, {
-        headers: { 'User-Agent': 'AeroWindTracker/1.0', 'Accept': 'application/json' }
-      }).then(r => r.ok ? r.json() : []).catch(() => [])
-    )
+    BBOXES.map(box => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      return fetch(`https://aviationweather.gov/api/data/metar?bbox=${box}&format=json`, {
+        headers: { 'User-Agent': 'AeroWindTracker/1.0', 'Accept': 'application/json' },
+        signal: ctrl.signal,
+      })
+        .then(r => { clearTimeout(timer); return r.ok ? r.json() : (console.error('[_wx] METAR bbox', box, 'status', r.status), []); })
+        .catch(e => { clearTimeout(timer); console.error('[_wx] METAR bbox', box, 'error', e.message); return []; });
+    })
   );
   let ground = [];
   results.forEach(r => { if (Array.isArray(r)) ground = ground.concat(r); });
