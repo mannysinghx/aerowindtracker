@@ -46,31 +46,85 @@ function col(cols, idx) {
   return (cols[idx] ?? '').trim();
 }
 
-// Map OurAirports frequency type codes to friendly labels.
+// Civilian VHF aviation band: 108–136.975 MHz (nav + comm).
+// Anything outside this range is military/HF/UHF — not useful for civilian pilots.
+const MIN_CIVIL_MHZ = 108;
+const MAX_CIVIL_MHZ = 137;
+
+// Types that are never useful to civilian pilots — filter entirely.
+const SKIP_TYPES = new Set(['MISC', 'PMSV', 'MIL', 'RMP', 'PTD', 'GTE', 'TML', 'COMD POST', 'ARTC']);
+
+// Map OurAirports frequency type codes → friendly display labels.
 const FREQ_TYPE_LABEL = {
-  ATIS:   'ATIS',
-  ASOS:   'ASOS',
-  AWOS:   'AWOS',
-  AWOS3:  'AWOS',
-  AWIS:   'AWIS',
-  CTAF:   'CTAF',
-  UNICOM: 'UNICOM',
-  GND:    'Ground',
-  GROUND: 'Ground',
-  TWR:    'Tower',
-  TOWER:  'Tower',
-  APP:    'Approach',
-  DEP:    'Departure',
-  CLNC:   'Clearance',
-  RDO:    'Radio',
+  ATIS:    'ATIS',
+  'D-ATIS':'D-ATIS',
+  ASOS:    'ASOS',
+  AWOS:    'AWOS',
+  'AWOS-3':'AWOS',
+  AWOS3:   'AWOS',
+  AWIS:    'AWIS',
+  CTAF:    'CTAF',
+  'CTAF/UNICOM': 'CTAF',
+  UNICOM:  'UNICOM',
+  UNIC:    'UNICOM',
+  UNI:     'UNICOM',
+  GND:     'Ground',
+  GROUND:  'Ground',
+  GRN:     'Ground',
+  GRD:     'Ground',
+  TWR:     'Tower',
+  TOWER:   'Tower',
+  APP:     'Approach',
+  APCH:    'Approach',
+  APPR:    'Approach',
+  'APP/DEP':  'App/Dep',
+  'APP/RAD':  'Approach',
+  'RAD/APP':  'Approach',
+  'A/D':   'App/Dep',
+  'APP/TWR':  'App/Twr',
+  'TWR/APP':  'App/Twr',
+  DEP:     'Departure',
+  CLNC:    'Clnc Del',
+  CLD:     'Clnc Del',
+  CD:      'Clnc Del',
+  DEL:     'Clnc Del',
+  DELIVERY:'Clnc Del',
+  CNTR:    'Center',
+  CTR:     'Center',
+  CENTER:  'Center',
+  ACC:     'Area Ctrl',
+  OPS:     'Operations',
+  OPER:    'Operations',
+  FSS:     'FSS',
+  RCO:     'FSS',
+  RDO:     'Radio',
+  RADIO:   'Radio',
+  'A/G':   'Air/Ground',
+  INFO:    'Information',
+  AFIS:    'Flight Info',
+  ATF:     'Traffic Freq',
+  EMR:     'Emergency',
+  EMERG:   'Emergency',
+  MULTICOM:'Multicom',
 };
 
 function freqLabel(type) {
-  return FREQ_TYPE_LABEL[type.toUpperCase()] ?? type;
+  return FREQ_TYPE_LABEL[type.toUpperCase()] ?? FREQ_TYPE_LABEL[type] ?? type;
 }
 
 // Frequency display priority for sorting.
-const FREQ_ORDER = ['ATIS', 'ASOS', 'AWOS', 'AWOS3', 'AWIS', 'CLNC', 'GND', 'GROUND', 'TWR', 'TOWER', 'APP', 'DEP', 'CTAF', 'UNICOM', 'RDO'];
+const FREQ_ORDER = [
+  'ATIS', 'D-ATIS', 'ASOS', 'AWOS', 'AWOS3', 'AWIS',
+  'CLD', 'CLNC', 'CD', 'DEL', 'DELIVERY',
+  'GND', 'GROUND', 'GRN', 'GRD',
+  'TWR', 'TOWER',
+  'APP', 'APCH', 'APPR', 'A/D', 'APP/DEP',
+  'DEP',
+  'CTAF', 'UNICOM', 'UNIC',
+  'CNTR', 'CTR', 'CENTER', 'ACC',
+  'FSS', 'RCO',
+  'RDO', 'RADIO', 'OPS', 'A/G', 'INFO',
+];
 function freqSortKey(type) {
   const idx = FREQ_ORDER.indexOf(type.toUpperCase());
   return idx === -1 ? 99 : idx;
@@ -148,6 +202,9 @@ async function lookupAirport(icao) {
     const desc  = col(c, 4);
     const mhz   = parseFloat(col(c, 5));
     if (isNaN(mhz)) continue;
+    // Skip non-civilian types and out-of-band frequencies
+    if (SKIP_TYPES.has(fType)) continue;
+    if (mhz < MIN_CIVIL_MHZ || mhz > MAX_CIVIL_MHZ) continue;
     const key = fType;
     if (!freqsByType[key]) freqsByType[key] = [];
     freqsByType[key].push({ type: freqLabel(fType), rawType: fType, description: desc, mhz });

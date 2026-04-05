@@ -326,6 +326,7 @@ function App() {
       return;
     }
     const icao = selectedStation.id;
+    const airportIcao = selectedStation.airportIcao ?? selectedStation.id;
 
     setTafLoading(true);
     fetchTaf(icao).then(data => {
@@ -341,11 +342,11 @@ function App() {
 
     setAirportInfoLoading(true);
     setAirportInfo(null);
-    fetchAirportInfo(icao).then(data => {
+    fetchAirportInfo(airportIcao).then(data => {
       setAirportInfo(data);
       setAirportInfoLoading(false);
     });
-  }, [selectedStation?.id]);
+  }, [selectedStation?.id, selectedStation?.airportIcao]);
 
   const handleDisclaimerAccept = () => {
     setTrackingLoading(true);
@@ -693,6 +694,7 @@ function App() {
       // Convert to points array structure
       setSelectedStation({
         id: nearestStation.icaoId,
+        airportIcao: ap.id,  // preserve the original selected airport ICAO
         name: nearestStation.name || ap.name,
         lat: nearestStation.lat,
         lon: nearestStation.lon,
