@@ -350,29 +350,33 @@ function App() {
   }, [selectedStation?.id, selectedStation?.airportIcao]);
 
   const handleDisclaimerAccept = () => {
-    // Dismiss immediately — don't block on geolocation
-    setDisclaimerVisible(false);
-
-    // Fire tracking in the background without blocking UX
+    setTrackingLoading(true);
     let userId = localStorage.getItem('aerowind_user_id');
     if (!userId) {
       userId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
       localStorage.setItem('aerowind_user_id', userId);
     }
 
-    const sendTrackingData = (lat, lon) => {
-      fetch(`${API_BASE}/api/tracking`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, lat, lon })
-      }).catch(e => console.error("Tracking error:", e));
+    const sendTrackingData = async (lat, lon) => {
+      try {
+        await fetch(`${API_BASE}/api/tracking`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, lat, lon })
+        });
+      } catch (e) {
+        console.error("Tracking error:", e);
+      } finally {
+        setTrackingLoading(false);
+        setDisclaimerVisible(false);
+      }
     };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => sendTrackingData(position.coords.latitude, position.coords.longitude),
         () => sendTrackingData(null, null),
-        { timeout: 5000 }
+        { timeout: 8000 }
       );
     } else {
       sendTrackingData(null, null);
@@ -721,7 +725,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <MapContainer center={center} zoom={5} zoomControl={false} scrollWheelZoom={true} className="leaflet-container">
+      <MapContainer center={center} zoom={5} zoomControl={false} className="leaflet-container">
         <TileLayer
           attribution={MAP_STYLES[mapStyleKey].attr}
           url={MAP_STYLES[mapStyleKey].url}
@@ -940,7 +944,7 @@ function App() {
               position={[point.lat, point.lon]}
               icon={customIcon}
               eventHandlers={{
-                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(true); }
+                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(false); }
               }}
             />
           );
@@ -986,30 +990,30 @@ function App() {
         )}
         {/* ── Top Navigation Bar ── */}
         <header className="app-topbar ui-element" style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          height: isMobile ? '60px' : '56px',
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: isMobile ? '0 12px' : '0 16px',
-          zIndex: 2000, pointerEvents: 'none',
+          position: 'absolute', top: 0, left: 0, right: 0, height: '56px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', zIndex: 2000, pointerEvents: 'none',
           background: theme === 'dark'
-            ? 'rgba(10,17,34,0.95)'
-            : 'rgba(241,245,249,0.97)',
-          borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'}`,
-          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+            ? 'linear-gradient(to bottom, rgba(10,17,34,0.92) 0%, rgba(10,17,34,0.6) 70%, transparent 100%)'
+            : 'linear-gradient(to bottom, rgba(241,245,249,0.97) 0%, rgba(241,245,249,0.7) 70%, transparent 100%)',
+          borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
         }}>
-          {/* Brand — icon + name on desktop, icon only on mobile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', pointerEvents: 'auto', flexShrink: 0 }}>
+          {/* Left: Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0 }}>
             <Wind size={18} color="var(--accent-color)" style={{ animation: 'float 3s ease-in-out infinite' }} />
-            {!isMobile && <>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
-              <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
-              <span style={{ color: '#f59e0b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.3px', fontStyle: 'italic' }}>Highly Experimental</span>
-            </>}
+            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
+            <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
+            <span style={{ color: '#f59e0b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.3px', fontStyle: 'italic' }}>Highly Experimental</span>
           </div>
 
-          {/* Search — flex:1 fills all remaining space */}
-          <div style={{ flex: 1, position: 'relative', pointerEvents: 'auto' }}>
-            <div className="glass-panel" style={{ padding: '8px 12px', borderRadius: '10px' }}>
+          {/* Center: Search */}
+          <div className={isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''} style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            width: isMobile ? 'calc(100% - 100px)' : '300px',
+            pointerEvents: 'auto', zIndex: 2000,
+          }}>
+            {/* Input bar */}
+            <div className="glass-panel" style={{ padding: '7px 12px', borderRadius: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Search size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                 <input
@@ -1021,10 +1025,12 @@ function App() {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '16px' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.85rem' }}
                 />
               </div>
             </div>
+
+            {/* Dropdown — absolutely positioned below the input bar */}
             {searchResults.length > 0 && (
               <div className="glass-panel" style={{
                 position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
@@ -1048,8 +1054,8 @@ function App() {
             )}
           </div>
 
-          {/* Right: controls — on mobile, just leave room for the hamburger button */}
-          <div style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0 }}>
+          {/* Right: Sync status + Theme toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0, paddingRight: isMobile ? '52px' : '0' }}>
             <div className="glass-pill" style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <RefreshCw size={11} className={loading ? 'spin' : ''} style={{ color: loading ? 'var(--accent-color)' : 'var(--text-secondary)' }} />
               <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
@@ -1110,7 +1116,7 @@ function App() {
           };
           return (
             <div className={`right-toolbar${isMobile && !isMobileMenuOpen ? ' mobile-hidden' : ''}`} style={{
-              position: 'absolute', right: '16px', top: isMobile ? '74px' : '70px',
+              position: 'absolute', right: '16px', top: '70px',
               display: 'flex', flexDirection: 'column', gap: '6px',
               zIndex: 1100, pointerEvents: 'auto',
             }}>

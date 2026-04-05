@@ -99,11 +99,6 @@
   box-sizing: border-box;
 }
 
-.app-container {
-  overflow: hidden;
-  max-width: 100vw;
-}
-
 .ui-element {
   pointer-events: auto; /* Re-enable pointer events for UI panels */
 }

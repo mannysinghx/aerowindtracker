@@ -36,8 +36,9 @@ export function parseLvl(str) {
 export async function fetchMETARs() {
   const results = await Promise.all(
     BBOXES.map(box =>
-      fetch(`https://aviationweather.gov/api/data/metar?bbox=${box}&format=json`)
-        .then(r => r.json()).catch(() => [])
+      fetch(`https://aviationweather.gov/api/data/metar?bbox=${box}&format=json`, {
+        headers: { 'User-Agent': 'AeroWindTracker/1.0', 'Accept': 'application/json' }
+      }).then(r => r.ok ? r.json() : []).catch(() => [])
     )
   );
   let ground = [];
