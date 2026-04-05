@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Wind, Thermometer, Droplets, Navigation, X, AlertTriangle, RefreshCw, Search, Target, Sun, Moon, MessageSquare, Send, Bot, User, Menu, CloudRain, Layers, Activity, Info, Settings, ChevronUp, ChevronDown, Plane } from 'lucide-react';
 import MobileToggleBtn from './components/MobileToggleBtn';
 import { fetchLiveAIData, fetchTaf, fetchNotams, fetchAirportInfo } from './services/api';
+import { API_BASE } from './config.js';
 import { getTimezoneFromLatLon } from './utils/timezone';
 import CrosswindControls from './components/CrosswindControls';
 import TafTimeline from './components/TafTimeline';
@@ -278,7 +279,7 @@ function App() {
   useEffect(() => {
     async function checkAgents() {
       try {
-        const res = await fetch('/api/agents');
+        const res = await fetch(`${API_BASE}/api/agents`);
         if (!res.ok) return;
         const data = await res.json();
         const high = Object.values(data.agents || {}).reduce(
@@ -349,33 +350,29 @@ function App() {
   }, [selectedStation?.id, selectedStation?.airportIcao]);
 
   const handleDisclaimerAccept = () => {
-    setTrackingLoading(true);
+    // Dismiss immediately — don't block on geolocation
+    setDisclaimerVisible(false);
+
+    // Fire tracking in the background without blocking UX
     let userId = localStorage.getItem('aerowind_user_id');
     if (!userId) {
       userId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
       localStorage.setItem('aerowind_user_id', userId);
     }
 
-    const sendTrackingData = async (lat, lon) => {
-      try {
-        await fetch('/api/tracking', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, lat, lon })
-        });
-      } catch (e) {
-        console.error("Tracking error:", e);
-      } finally {
-        setTrackingLoading(false);
-        setDisclaimerVisible(false);
-      }
+    const sendTrackingData = (lat, lon) => {
+      fetch(`${API_BASE}/api/tracking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, lat, lon })
+      }).catch(e => console.error("Tracking error:", e));
     };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => sendTrackingData(position.coords.latitude, position.coords.longitude),
         () => sendTrackingData(null, null),
-        { timeout: 8000 }
+        { timeout: 5000 }
       );
     } else {
       sendTrackingData(null, null);
@@ -398,7 +395,7 @@ function App() {
          parts: [{ text: m.text }]
       }));
 
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -704,6 +701,7 @@ function App() {
         temp: nearestStation.temp,
         dew: nearestStation.dewp
       });
+      setMobilePanelExpanded(true);
     }
   };
 
@@ -723,7 +721,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <MapContainer center={center} zoom={5} zoomControl={false} className="leaflet-container">
+      <MapContainer center={center} zoom={5} zoomControl={false} scrollWheelZoom={true} className="leaflet-container">
         <TileLayer
           attribution={MAP_STYLES[mapStyleKey].attr}
           url={MAP_STYLES[mapStyleKey].url}
@@ -942,7 +940,7 @@ function App() {
               position={[point.lat, point.lon]}
               icon={customIcon}
               eventHandlers={{
-                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(false); }
+                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(true); }
               }}
             />
           );
@@ -988,30 +986,30 @@ function App() {
         )}
         {/* ── Top Navigation Bar ── */}
         <header className="app-topbar ui-element" style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '56px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 16px', zIndex: 2000, pointerEvents: 'none',
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: isMobile ? '60px' : '56px',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: isMobile ? '0 12px' : '0 16px',
+          zIndex: 2000, pointerEvents: 'none',
           background: theme === 'dark'
-            ? 'linear-gradient(to bottom, rgba(10,17,34,0.92) 0%, rgba(10,17,34,0.6) 70%, transparent 100%)'
-            : 'linear-gradient(to bottom, rgba(241,245,249,0.97) 0%, rgba(241,245,249,0.7) 70%, transparent 100%)',
-          borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
+            ? 'rgba(10,17,34,0.95)'
+            : 'rgba(241,245,249,0.97)',
+          borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'}`,
+          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
         }}>
-          {/* Left: Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0 }}>
+          {/* Brand — icon + name on desktop, icon only on mobile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', pointerEvents: 'auto', flexShrink: 0 }}>
             <Wind size={18} color="var(--accent-color)" style={{ animation: 'float 3s ease-in-out infinite' }} />
-            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
-            <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
-            <span style={{ color: '#f59e0b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.3px', fontStyle: 'italic' }}>Highly Experimental</span>
+            {!isMobile && <>
+              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.2px' }}>AeroWind Tracker</span>
+              <span style={{ background: '#ef4444', color: 'white', padding: '2px 5px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>BETA</span>
+              <span style={{ color: '#f59e0b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.3px', fontStyle: 'italic' }}>Highly Experimental</span>
+            </>}
           </div>
 
-          {/* Center: Search */}
-          <div className={isMobile && !isMobileMenuOpen ? 'mobile-hidden' : ''} style={{
-            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-            width: isMobile ? 'calc(100% - 100px)' : '300px',
-            pointerEvents: 'auto', zIndex: 2000,
-          }}>
-            {/* Input bar */}
-            <div className="glass-panel" style={{ padding: '7px 12px', borderRadius: '10px' }}>
+          {/* Search — flex:1 fills all remaining space */}
+          <div style={{ flex: 1, position: 'relative', pointerEvents: 'auto' }}>
+            <div className="glass-panel" style={{ padding: '8px 12px', borderRadius: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Search size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                 <input
@@ -1019,12 +1017,14 @@ function App() {
                   placeholder="Search airport (e.g. KSEA)"
                   value={searchTerm}
                   onChange={handleSearch}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.85rem' }}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '16px' }}
                 />
               </div>
             </div>
-
-            {/* Dropdown — absolutely positioned below the input bar */}
             {searchResults.length > 0 && (
               <div className="glass-panel" style={{
                 position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
@@ -1048,8 +1048,8 @@ function App() {
             )}
           </div>
 
-          {/* Right: Sync status + Theme toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0, paddingRight: isMobile ? '52px' : '0' }}>
+          {/* Right: controls — on mobile, just leave room for the hamburger button */}
+          <div style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexShrink: 0 }}>
             <div className="glass-pill" style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <RefreshCw size={11} className={loading ? 'spin' : ''} style={{ color: loading ? 'var(--accent-color)' : 'var(--text-secondary)' }} />
               <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
@@ -1110,7 +1110,7 @@ function App() {
           };
           return (
             <div className={`right-toolbar${isMobile && !isMobileMenuOpen ? ' mobile-hidden' : ''}`} style={{
-              position: 'absolute', right: '16px', top: '70px',
+              position: 'absolute', right: '16px', top: isMobile ? '74px' : '70px',
               display: 'flex', flexDirection: 'column', gap: '6px',
               zIndex: 1100, pointerEvents: 'auto',
             }}>
@@ -1142,16 +1142,23 @@ function App() {
         {/* ── Weather Panel (right side / mobile bottom sheet) ── */}
         {showWeatherPanel && (
           <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
-            <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} />
+            <WeatherOverlayPanel config={wxOverlay} onChange={setWxOverlay} onClose={() => setShowWeatherPanel(false)} />
           </div>
         )}
 
         {/* ── Flight Path Panel (right side / mobile bottom sheet) ── */}
         {showFlightPathPanel && (
-          <div className={isMobile ? 'mobile-bottom-sheet' : ''} style={isMobile ? { pointerEvents: 'auto' } : { position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto' }}>
+          <div style={isMobile ? {
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            zIndex: 4000, pointerEvents: 'auto',
+          } : {
+            position: 'absolute', top: '70px', right: '70px', zIndex: 1050, pointerEvents: 'auto',
+          }}>
             <FlightPathPanel
               theme={theme}
               allAirports={allAirports}
+              isMobile={isMobile}
+              apiBase={API_BASE}
               onClose={() => setShowFlightPathPanel(false)}
               onRouteCalculated={setFlightRouteData}
             />
@@ -1180,7 +1187,10 @@ function App() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
               <AlertTriangle size={16} color="#ef4444" />
-              <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>AeroGuard AI Alerts</h3>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem', margin: 0, flex: 1 }}>AeroGuard AI Alerts</h3>
+              <button onClick={() => setShowAlertsPanel(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                <X size={16} />
+              </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {alertFeed.map((alert, idx) => {
@@ -1232,9 +1242,14 @@ function App() {
           } : {
             position: 'absolute', top: '70px', right: '70px',
             padding: '16px', zIndex: 1050, pointerEvents: 'auto', minWidth: '200px',
-            maxHeight: 'calc(100vh - 90px)', overflowY: 'auto',
+            maxHeight: 'calc(100dvh - 90px)', overflowY: 'auto',
           }}>
-            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '14px' }}>Settings</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Settings</span>
+              <button onClick={() => setShowSettingsPanel(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                <X size={16} />
+              </button>
+            </div>
 
             {/* Altitude */}
             <div style={{ marginBottom: '16px' }}>
@@ -1412,8 +1427,8 @@ function App() {
         <div
           className={`left-controls ${isMobile && !isMobileMenuOpen && !selectedStation ? 'mobile-hidden' : ''}`}
           style={isMobile && selectedStation
-            ? { position: 'absolute', bottom: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'column', zIndex: 4000, pointerEvents: 'none' }
-            : { position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100vh - 86px)', overflowY: 'auto' }
+            ? { position: 'absolute', bottom: 0, left: 0, right: 0, width: 'auto', display: 'flex', flexDirection: 'column', zIndex: 4000, pointerEvents: 'none', overflowX: 'hidden' }
+            : { position: 'absolute', top: '66px', left: '16px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 1000, pointerEvents: 'none', maxHeight: 'calc(100dvh - 86px)', overflowY: 'auto' }
           }
         >
 
@@ -1499,10 +1514,26 @@ function App() {
               <div className="stat-item" style={{ gridColumn: '1 / -1', marginTop: '5px' }}>
                 <button
                    onClick={(e) => { e.stopPropagation(); setShowPireps(!showPireps); }}
-                   className="glass-pill hover-scale"
-                   style={{ width: '100%', padding: '8px', border: '1px solid #f97316', color: '#f97316', background: showPireps ? 'rgba(249, 115, 22, 0.2)' : 'transparent', cursor: 'pointer', fontWeight: 'bold' }}
+                   style={{
+                     width: '100%',
+                     padding: '10px 14px',
+                     border: '1px solid #f97316',
+                     borderRadius: '10px',
+                     color: showPireps ? '#fff' : '#f97316',
+                     background: showPireps ? '#f97316' : 'rgba(249, 115, 22, 0.08)',
+                     cursor: 'pointer',
+                     fontWeight: '600',
+                     fontSize: '0.875rem',
+                     letterSpacing: '0.01em',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: '6px',
+                     transition: 'background 0.2s ease, color 0.2s ease',
+                     WebkitTapHighlightColor: 'transparent',
+                   }}
                 >
-                   {showPireps ? 'Hide Local PIREPs' : 'Show Local PIREPs'}
+                   {showPireps ? '✕ Hide Local PIREPs' : '⚠ Show Local PIREPs'}
                 </button>
                 {showPireps && pireps.filter(p => !selectedStation || getDistance(selectedStation.lat, selectedStation.lon, p.lat, p.lon) < 300).length === 0 && (
                   <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
@@ -1517,45 +1548,48 @@ function App() {
                 Runway interpolation autonomously projected based on current wind vector arrays. Not for real-world navigation.
               </p>
             </div>
-          </div>
-          
-          {selectedStation && (!isMobile || mobilePanelExpanded) && (
-             <CrosswindControls
+
+            {/* Expanded content — inside the scrollable panel so it flows as one sheet */}
+            {selectedStation && (!isMobile || mobilePanelExpanded) && (
+              <CrosswindControls
                 windDir={selectedStation.windDir}
                 windSpeed={selectedStation.windSpeed}
                 runwayHeading={activeHeading}
                 theme={theme}
-             />
-          )}
+                fullWidth={isMobile}
+              />
+            )}
 
-          {selectedStation && (!isMobile || mobilePanelExpanded) && (
-            <AirportInfoPanel
-              key={`apt-${selectedStation.id}`}
-              airportData={airportInfo}
-              loading={airportInfoLoading}
-              theme={theme}
-            />
-          )}
+            {selectedStation && (!isMobile || mobilePanelExpanded) && (
+              <AirportInfoPanel
+                key={`apt-${selectedStation.id}`}
+                airportData={airportInfo}
+                loading={airportInfoLoading}
+                theme={theme}
+              />
+            )}
 
-          {selectedStation && (!isMobile || mobilePanelExpanded) && (
-            <TafTimeline
-              key={`taf-${selectedStation.id}`}
-              tafData={tafData}
-              loading={tafLoading}
-              theme={theme}
-              timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
-            />
-          )}
+            {selectedStation && (!isMobile || mobilePanelExpanded) && (
+              <TafTimeline
+                key={`taf-${selectedStation.id}`}
+                tafData={tafData}
+                loading={tafLoading}
+                theme={theme}
+                timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
+              />
+            )}
 
-          {selectedStation && (!isMobile || mobilePanelExpanded) && (
-            <NotamPanel
-              key={`notam-${selectedStation.id}`}
-              notamData={notamData}
-              loading={notamLoading}
-              theme={theme}
-              timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
-            />
-          )}
+            {selectedStation && (!isMobile || mobilePanelExpanded) && (
+              <NotamPanel
+                key={`notam-${selectedStation.id}`}
+                notamData={notamData}
+                loading={notamLoading}
+                theme={theme}
+                timezone={getTimezoneFromLatLon(selectedStation.lat, selectedStation.lon)}
+              />
+            )}
+
+          </div>
 
         </div>
 

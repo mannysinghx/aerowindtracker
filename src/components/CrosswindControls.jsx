@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function CrosswindControls({ windDir, runwayHeading, theme }) {
+export default function CrosswindControls({ windDir, runwayHeading, theme, fullWidth }) {
   if (windDir === null || runwayHeading === null) return null;
 
   // Relative wind angle relative to the nose (0 is straight ahead, 90 is right wing)
@@ -65,7 +65,7 @@ export default function CrosswindControls({ windDir, runwayHeading, theme }) {
   const secTextColor = theme === 'dark' ? '#94a3b8' : '#475569';
 
   return (
-    <div className="crosswind-controls glass-panel ui-element" style={{ width: '320px', padding: '15px', position: 'relative', marginTop: '-5px', flexShrink: 0, transition: 'all 0.3s ease' }}>
+    <div className="crosswind-controls glass-panel ui-element" style={{ width: fullWidth ? '100%' : '320px', padding: '15px', position: 'relative', marginTop: '-5px', flexShrink: 0, transition: 'all 0.3s ease', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <h3 className="text-sm font-bold" style={{ color: textColor }}>Taxi Wind Deflection</h3>
         <span style={{ fontSize: '0.7rem', color: 'var(--accent-color)', padding: '2px 6px', border: '1px solid var(--accent-color)', borderRadius: '4px', fontWeight: 'bold' }}>

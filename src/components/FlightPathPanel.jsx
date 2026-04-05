@@ -616,13 +616,32 @@ function AltitudeRecommendation({ rec, theme }) {
   );
 }
 
-export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCalculated }) {
+function toIcao(id) {
+  if (!id) return '';
+  const u = id.toUpperCase().trim();
+  // If 3-letter US-style code, prepend K
+  return (u.length === 3 && /^[A-Z]{3}$/.test(u)) ? `K${u}` : u;
+}
+
+function getDayLabel(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (offset === 0) return `Today · ${months[d.getMonth()]} ${d.getDate()}`;
+  if (offset === 1) return `Tomorrow · ${months[d.getMonth()]} ${d.getDate()}`;
+  return `${days[d.getDay()]} · ${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+export default function FlightPathPanel({ theme, allAirports, isMobile, apiBase, onClose, onRouteCalculated }) {
+  const base = apiBase || (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform() ? 'https://www.aerowindy.com' : '');
   const [fromQuery, setFromQuery] = useState('');
   const [toQuery,   setToQuery]   = useState('');
   const [fromResults, setFromResults] = useState([]);
   const [toResults,   setToResults]   = useState([]);
   const [fromAirport, setFromAirport] = useState(null);
   const [toAirport,   setToAirport]   = useState(null);
+  const [dayOffset, setDayOffset] = useState(0);
   const [departureTime, setDepartureTime] = useState(() => {
     // Default to nearest 30-min increment of current local time
     const now = new Date();
@@ -638,10 +657,19 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
 
   const searchAirports = (query) => {
     if (!query || query.length < 2) return [];
-    const q = query.toUpperCase();
-    return (allAirports || [])
-      .filter(a => (a.id || '').toUpperCase().includes(q) || (a.name || '').toUpperCase().includes(q))
-      .slice(0, 6);
+    const lowerTerm = query.toLowerCase();
+    const stripped = lowerTerm.startsWith('k') && lowerTerm.length > 1 ? lowerTerm.slice(1) : null;
+    const airports = allAirports || [];
+    let matches = airports.filter(a => {
+      const id = (a.id || '').toLowerCase();
+      return id.startsWith(lowerTerm) || (stripped && id.startsWith(stripped));
+    });
+    if (matches.length < 5) {
+      matches = matches.concat(airports.filter(a =>
+        a.name && a.name.toLowerCase().includes(lowerTerm) && !matches.find(m => m.id === a.id)
+      ));
+    }
+    return matches.slice(0, 10);
   };
 
   const handleFromChange = e => {
@@ -676,19 +704,18 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
     setError(null);
     setRouteData(null);
 
+    const url = `${base}/api/flightpath?from=${encodeURIComponent(toIcao(fromAirport.id))}&to=${encodeURIComponent(toIcao(toAirport.id))}&time=${encodeURIComponent(departureTime)}&dayOffset=${dayOffset}`;
     try {
-      const url = `/api/flightpath?from=${encodeURIComponent(fromAirport.id)}&to=${encodeURIComponent(toAirport.id)}&time=${encodeURIComponent(departureTime)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Route calculation failed');
+      const res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(`Non-JSON response (status ${res.status})`); }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setRouteData(data);
-      // Auto-select the altitude tab matching the recommendation
-      if (data.altitudeRecommendation?.altKey) {
-        setSelectedAlt(data.altitudeRecommendation.altKey);
-      }
+      if (data.altitudeRecommendation?.altKey) setSelectedAlt(data.altitudeRecommendation.altKey);
       if (onRouteCalculated) onRouteCalculated(data);
     } catch (e) {
-      setError(e.message);
+      setError(`${e.message} — ${url}`);
     } finally {
       setLoading(false);
     }
@@ -704,12 +731,14 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
     background: theme === 'dark' ? 'rgba(10,17,34,0.97)' : 'rgba(255,255,255,0.98)',
     border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
     borderTop: '3px solid #38bdf8',
-    borderRadius: '12px',
-    padding: '14px',
-    width: '360px',
-    maxHeight: 'calc(100vh - 120px)',
+    borderRadius: isMobile ? '20px 20px 0 0' : '12px',
+    padding: isMobile ? '16px 16px 32px' : '14px',
+    width: isMobile ? '100%' : '360px',
+    maxHeight: isMobile ? '75dvh' : 'calc(100vh - 120px)',
     overflowY: 'auto',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+    boxShadow: '0 -8px 32px rgba(0,0,0,0.45)',
+    boxSizing: 'border-box',
+    WebkitOverflowScrolling: 'touch',
   };
 
   const inputRow = {
@@ -723,6 +752,9 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
 
   return (
     <div style={panel}>
+      {isMobile && (
+        <div style={{ width: '32px', height: '3px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 auto 10px' }} />
+      )}
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '10px' }}>
         <Wind size={15} color="#38bdf8" />
@@ -764,11 +796,28 @@ export default function FlightPathPanel({ theme, allAirports, onClose, onRouteCa
         />
       </div>
 
-      {/* Departure time */}
+      {/* Departure day + time */}
       <div style={{ marginBottom: '12px' }}>
-        <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
-          Departure Time (Local 24hr)
+        <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>
+          Departure Date &amp; Time
         </div>
+        {/* Day selector */}
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '6px' }}>
+          {[0, 1, 2].map(d => (
+            <button key={d} onClick={() => setDayOffset(d)} style={{
+              flex: 1, padding: '6px 4px', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '0.65rem', fontWeight: 700, lineHeight: 1.3, textAlign: 'center',
+              border: `1px solid ${dayOffset === d ? '#38bdf8' : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)')}`,
+              background: dayOffset === d ? 'rgba(56,189,248,0.15)' : (theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+              color: dayOffset === d ? '#38bdf8' : 'var(--text-secondary)',
+              transition: 'all 0.15s',
+              WebkitTapHighlightColor: 'transparent',
+            }}>
+              {getDayLabel(d)}
+            </button>
+          ))}
+        </div>
+        {/* Time selector */}
         <div style={{ position: 'relative' }}>
           <Clock size={13} color="#64748b" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select

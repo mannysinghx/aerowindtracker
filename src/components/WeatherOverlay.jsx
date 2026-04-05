@@ -328,7 +328,7 @@ export function WeatherOverlayLayer({ config }) {
 
 // ─── Control Panel ────────────────────────────────────────────────────────────
 
-export function WeatherOverlayPanel({ config, onChange }) {
+export function WeatherOverlayPanel({ config, onChange, onClose }) {
   const { type, altitude, opacity } = config;
   const [collapsed, setCollapsed] = useState(true);
   const def = type ? LAYER_MAP[type] : null;
@@ -379,9 +379,19 @@ export function WeatherOverlayPanel({ config, onChange }) {
             </span>
           )}
         </div>
-        {collapsed
-          ? <ChevronDown size={13} color="var(--text-secondary)" />
-          : <ChevronUp size={13} color="var(--text-secondary)" />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {collapsed
+            ? <ChevronDown size={13} color="var(--text-secondary)" />
+            : <ChevronUp size={13} color="var(--text-secondary)" />}
+          {onClose && (
+            <button
+              onClick={e => { e.stopPropagation(); onClose(); }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       {!collapsed && (

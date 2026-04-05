@@ -1,3 +1,5 @@
+import { API_BASE } from '../config.js';
+
 const BBOXES = [
   "24.0,-90.0,35.0,-75.0",
   "35.0,-90.0,49.0,-75.0",
@@ -167,9 +169,17 @@ async function fetchMetarDirect() {
   return unique;
 }
 
+// Normalise 3-letter FAA identifiers to 4-letter ICAO (SEA → KSEA)
+// us_airports.json stores IDs without K prefix; all weather APIs need ICAO format
+function toIcao(id) {
+  if (!id) return id;
+  const u = id.toUpperCase().trim();
+  return (u.length === 3 && /^[A-Z]{3}$/.test(u)) ? 'K' + u : u;
+}
+
 export async function fetchAirportInfo(icao) {
   try {
-    const res = await fetch(`/api/airport?icao=${encodeURIComponent(icao)}`);
+    const res = await fetch(`${API_BASE}/api/airport?icao=${encodeURIComponent(toIcao(icao))}`);
     if (res.ok) return await res.json();
   } catch { /* server offline */ }
   return null;
@@ -177,7 +187,7 @@ export async function fetchAirportInfo(icao) {
 
 export async function fetchTaf(icao) {
   try {
-    const res = await fetch(`/api/taf?icao=${encodeURIComponent(icao)}`);
+    const res = await fetch(`${API_BASE}/api/taf?icao=${encodeURIComponent(toIcao(icao))}`);
     if (res.ok) return await res.json();
   } catch { /* server offline */ }
   return null;
@@ -185,7 +195,7 @@ export async function fetchTaf(icao) {
 
 export async function fetchNotams(icao) {
   try {
-    const res = await fetch(`/api/notams?icao=${encodeURIComponent(icao)}`);
+    const res = await fetch(`${API_BASE}/api/notams?icao=${encodeURIComponent(toIcao(icao))}`);
     if (res.ok) return await res.json();
   } catch { /* server offline */ }
   return null;
@@ -194,7 +204,7 @@ export async function fetchNotams(icao) {
 export async function fetchLiveAIData() {
   // Primary: backend server (AI alerts, PIREP parsing, aloft wind data)
   try {
-    const res = await fetch('/api/data');
+    const res = await fetch(`${API_BASE}/api/data`);
     if (res.ok) return await res.json();
   } catch (e) { /* server unavailable, fall through */ }
 

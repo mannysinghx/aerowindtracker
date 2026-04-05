@@ -335,30 +335,45 @@ function computeAltitudeRecommendation(trueBearing, distanceNm, waypoints) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const fromIcao = (req.query.from || '').toUpperCase().trim();
-  const toIcao = (req.query.to || '').toUpperCase().trim();
+  const rawFrom = (req.query.from || '').toUpperCase().trim();
+  const rawTo   = (req.query.to   || '').toUpperCase().trim();
+  // Normalise 3-letter domestic codes to ICAO (SEA → KSEA)
+  const fromIcao = rawFrom.length === 3 && /^[A-Z]{3}$/.test(rawFrom) ? `K${rawFrom}` : rawFrom;
+  const toIcao   = rawTo.length   === 3 && /^[A-Z]{3}$/.test(rawTo)   ? `K${rawTo}`   : rawTo;
   const time = req.query.time || '12:00';
+  const dayOffset = parseInt(req.query.dayOffset || '0', 10) || 0;
+  // Use progressively longer forecast window for future days
+  const fcstHour = dayOffset >= 2 ? '24' : dayOffset === 1 ? '12' : '06';
 
   if (!fromIcao || !toIcao) {
     return res.status(400).json({ error: 'from and to ICAO codes are required' });
   }
 
+  const wx = (url) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 7000);
+    return fetch(url, {
+      headers: { 'User-Agent': 'AeroWindTracker/1.0' },
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+  };
+
   try {
-    // Step 1: Fetch endpoint METARs to get coordinates
-    const [fromMet, toMet] = await Promise.all([
-      fetch(`https://aviationweather.gov/api/data/metar?ids=${fromIcao}&format=json`, {
-        headers: { 'User-Agent': 'AeroWindTracker/1.0' }
-      }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`https://aviationweather.gov/api/data/metar?ids=${toIcao}&format=json`, {
-        headers: { 'User-Agent': 'AeroWindTracker/1.0' }
-      }).then(r => r.ok ? r.json() : []).catch(() => []),
+    // Fetch all 3 sources fully in parallel — single batch, max 7s total
+    const [fromMet, toMet, aloftRaw] = await Promise.all([
+      wx(`https://aviationweather.gov/api/data/metar?ids=${fromIcao}&format=json`)
+        .then(r => r.ok ? r.json() : []).catch(() => []),
+      wx(`https://aviationweather.gov/api/data/metar?ids=${toIcao}&format=json`)
+        .then(r => r.ok ? r.json() : []).catch(() => []),
+      wx(`https://aviationweather.gov/api/data/windtemp?region=all&level=low&fcst=${fcstHour}&format=raw`)
+        .then(r => r.ok ? r.text() : '').catch(() => ''),
     ]);
 
     if (!fromMet[0]) {
-      return res.status(404).json({ error: `No METAR data found for ${fromIcao}. Try a major airport with ICAO code.` });
+      return res.status(404).json({ error: `No METAR data found for ${fromIcao}. Try a larger nearby airport (e.g. KSEA instead of S43).` });
     }
     if (!toMet[0]) {
-      return res.status(404).json({ error: `No METAR data found for ${toIcao}. Try a major airport with ICAO code.` });
+      return res.status(404).json({ error: `No METAR data found for ${toIcao}. Try a larger nearby airport (e.g. KSEA instead of S43).` });
     }
 
     const fromLat = fromMet[0].lat;
@@ -366,7 +381,7 @@ export default async function handler(req, res) {
     const toLat = toMet[0].lat;
     const toLon = toMet[0].lon;
 
-    // Step 2: Calculate 6 intermediate waypoints (8 total including endpoints)
+    // Calculate waypoints
     const NUM_SEGMENTS = 6;
     const waypoints = Array.from({ length: NUM_SEGMENTS + 1 }, (_, i) => {
       const t = i / NUM_SEGMENTS;
@@ -382,23 +397,8 @@ export default async function handler(req, res) {
     const totalDistNm = Math.round(haversineKm(fromLat, fromLon, toLat, toLon) * 0.539957);
     const routeBearing = calcBearing(fromLat, fromLon, toLat, toLon);
 
-    // Step 3: Fetch METAR data + winds-aloft data for the route bounding box
-    const pad = 3;
-    const minLat = Math.min(fromLat, toLat) - pad;
-    const maxLat = Math.max(fromLat, toLat) + pad;
-    const minLon = Math.min(fromLon, toLon) - pad;
-    const maxLon = Math.max(fromLon, toLon) + pad;
-
-    const [metarStations, aloftRaw] = await Promise.all([
-      fetch(
-        `https://aviationweather.gov/api/data/metar?bbox=${minLat},${minLon},${maxLat},${maxLon}&format=json`,
-        { headers: { 'User-Agent': 'AeroWindTracker/1.0' } }
-      ).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(
-        'https://aviationweather.gov/api/data/windtemp?region=all&level=low&fcst=06&format=raw',
-        { headers: { 'User-Agent': 'AeroWindTracker/1.0' } }
-      ).then(r => r.ok ? r.text() : '').catch(() => ''),
-    ]);
+    // Use endpoint METARs as waypoint surface data (no separate bbox fetch)
+    const metarStationsResolved = [...fromMet, ...toMet].filter(m => m.lat != null && m.lon != null);
 
     // Parse aloft data: 3-letter station IDs → altitude levels
     const aloftMap = new Map();
@@ -417,7 +417,7 @@ export default async function handler(req, res) {
 
     // Build merged station list: METAR stations enriched with matching aloft data
     // The aloft 3-letter ID (e.g. "SEA") maps to K+ID METAR station (e.g. "KSEA")
-    const mergedStations = metarStations
+    const mergedStations = metarStationsResolved
       .filter(m => m.lat != null && m.lon != null)
       .map(m => {
         const shortId = (m.icaoId || '').replace(/^K/, '');

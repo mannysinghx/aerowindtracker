@@ -95,8 +95,10 @@ Reply with the digest only. No bullet points, no markdown.`;
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const icao = (req.query.icao || '').toUpperCase().trim();
+  let icao = (req.query.icao || '').toUpperCase().trim();
   if (!icao) return res.status(400).json({ error: 'icao required' });
+  // Normalise 3-letter FAA codes to 4-letter ICAO (SEA → KSEA)
+  if (icao.length === 3 && /^[A-Z]{3}$/.test(icao)) icao = 'K' + icao;
 
   // L2 KV cache
   const cacheKey = `wx:notams:${icao}`;
