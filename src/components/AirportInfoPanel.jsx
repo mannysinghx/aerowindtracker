@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { Info, ChevronDown, ChevronUp, Radio, Ruler, MapPin, TrendingUp } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, Radio, Ruler, MapPin, TrendingUp, Wind } from 'lucide-react';
 
-// OurAirports surface codes → friendly labels
+// OurAirports surface codes → friendly labels (covers common variants)
 const SURFACE_MAP = {
+  ASP:     'Asphalt',
   ASPH:    'Asphalt',
-  'ASPH-G':'Asphalt (grooved)',
+  'ASPH-G':'Asphalt',
   'ASPH-F':'Asphalt',
+  'ASPH-CONC': 'Asphalt/Concrete',
+  CON:     'Concrete',
   CONC:    'Concrete',
-  'CONC-G':'Concrete (grooved)',
+  'CONC-G':'Concrete',
   'CONC-E':'Concrete',
+  'CONC-ASPH': 'Concrete/Asphalt',
   TURF:    'Turf',
+  GRVL:    'Gravel',
   GRAVEL:  'Gravel',
   GRE:     'Gravel',
   DIRT:    'Dirt',
@@ -24,16 +29,58 @@ const SURFACE_MAP = {
   LATERITE:'Laterite',
   GRASS:   'Grass',
   OILED:   'Oil Treated',
+  PEM:     'Asphalt',  // some FAA codes
+  PCC:     'Concrete',
   UNKNOWN: 'Unknown',
 };
 
 function surfaceLabel(raw) {
   if (!raw) return 'Unknown';
-  const upper = raw.toUpperCase().replace(/-E$/, '').replace(/-F$/, '');
-  return SURFACE_MAP[upper] ?? SURFACE_MAP[raw.toUpperCase()] ?? raw;
+  const upper = raw.toUpperCase().trim();
+  // Try exact match first, then strip trailing -E/-F modifiers
+  return SURFACE_MAP[upper]
+    ?? SURFACE_MAP[upper.replace(/-[EFG]$/, '')]
+    ?? raw;
 }
 
-// Frequency type colors for badges
+// OurAirports frequency type codes → friendly display labels
+const FREQ_TYPE_LABEL = {
+  ATIS:    'ATIS',
+  ASOS:    'ASOS',
+  AWOS:    'AWOS',
+  AWOS3:   'AWOS',
+  AWIS:    'AWIS',
+  CTAF:    'CTAF',
+  UNICOM:  'UNICOM',
+  UNIC:    'UNICOM',
+  UNI:     'UNICOM',
+  GND:     'Ground',
+  GROUND:  'Ground',
+  TWR:     'Tower',
+  TOWER:   'Tower',
+  APP:     'Approach',
+  APCH:    'Approach',
+  DEP:     'Departure',
+  CLNC:    'Clnc Del',
+  CLD:     'Clnc Del',
+  CD:      'Clnc Del',
+  CNTR:    'Center',
+  CTR:     'Center',
+  CENTER:  'Center',
+  OPS:     'Operations',
+  OPER:    'Operations',
+  RDO:     'Radio',
+  RADIO:   'Radio',
+  FSS:     'FSS',
+  MULTICOM:'Multicom',
+  EMERG:   'Emergency',
+};
+
+function freqTypeLabel(raw) {
+  return FREQ_TYPE_LABEL[raw.toUpperCase()] ?? raw;
+}
+
+// Frequency badge color themes
 const FREQ_COLORS = {
   ATIS:       { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
   ASOS:       { bg: 'rgba(99,102,241,0.2)',  border: '#6366f1', text: '#a5b4fc' },
@@ -44,12 +91,32 @@ const FREQ_COLORS = {
   Departure:  { bg: 'rgba(249,115,22,0.15)', border: '#f97316', text: '#fdba74' },
   CTAF:       { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
   UNICOM:     { bg: 'rgba(234,179,8,0.15)',  border: '#eab308', text: '#fde047' },
-  Clearance:  { bg: 'rgba(168,85,247,0.15)', border: '#a855f7', text: '#d8b4fe' },
+  'Clnc Del': { bg: 'rgba(168,85,247,0.15)', border: '#a855f7', text: '#d8b4fe' },
+  Center:     { bg: 'rgba(20,184,166,0.15)', border: '#14b8a6', text: '#5eead4' },
+  Operations: { bg: 'rgba(156,163,175,0.15)',border: '#6b7280', text: '#d1d5db' },
+  FSS:        { bg: 'rgba(244,63,94,0.15)',  border: '#f43f5e', text: '#fda4af' },
 };
 
-function freqBadgeStyle(type) {
-  return FREQ_COLORS[type] ?? { bg: 'rgba(255,255,255,0.08)', border: 'var(--panel-border)', text: 'var(--text-secondary)' };
+function freqBadgeStyle(label) {
+  return FREQ_COLORS[label] ?? { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', text: '#94a3b8' };
 }
+
+// Extract a runway designator from a frequency description string.
+// e.g. "Tower 16L/34R" → "16L/34R", "Rwy 34L" → "34L", "PAINE TWR 34" → "34"
+function extractRunway(desc) {
+  if (!desc) return null;
+  // Match patterns like "16L/34R", "16L-34R", "RWY 16", "34L", etc.
+  const m = desc.match(/\b(\d{1,2}[LRC]?(?:[/-]\d{1,2}[LRC]?)?)\b/);
+  return m ? m[1] : null;
+}
+
+// Standard FAA Traffic Pattern Altitudes (AGL) by aircraft category.
+const TPA_STANDARDS = [
+  { category: 'Piston / Single',  agl: 1000, color: '#60a5fa' },
+  { category: 'Large / Multi',    agl: 1500, color: '#a78bfa' },
+  { category: 'Turbine / Jet',    agl: 1500, color: '#f472b6' },
+  { category: 'Helicopter',       agl: 500,  color: '#34d399' },
+];
 
 function Skeleton({ width = '60%', height = '14px' }) {
   return (
@@ -65,14 +132,15 @@ function Skeleton({ width = '60%', height = '14px' }) {
 export default function AirportInfoPanel({ airportData, loading, theme }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  const panelBg = theme === 'dark' ? 'rgba(15,23,42,0.82)' : 'rgba(255,255,255,0.85)';
-  const borderCol = theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-  const textPrimary = theme === 'dark' ? '#e2e8f0' : '#1e293b';
+  const panelBg    = theme === 'dark' ? 'rgba(15,23,42,0.82)' : 'rgba(255,255,255,0.85)';
+  const borderCol  = theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+  const textPrimary   = theme === 'dark' ? '#e2e8f0' : '#1e293b';
   const textSecondary = theme === 'dark' ? '#94a3b8' : '#64748b';
 
-  const hasData = !loading && airportData;
-  const hasFreqs = hasData && airportData.frequencies?.length > 0;
+  const hasData    = !loading && airportData;
+  const hasFreqs   = hasData && airportData.frequencies?.length > 0;
   const hasRunways = hasData && airportData.runways?.length > 0;
+  const elevation  = hasData ? airportData.elevation_ft : null;
 
   return (
     <div
@@ -91,13 +159,10 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 14px',
           borderBottom: collapsed ? 'none' : `1px solid ${borderCol}`,
-          cursor: 'pointer',
-          userSelect: 'none',
+          cursor: 'pointer', userSelect: 'none',
         }}
         onClick={() => setCollapsed(c => !c)}
       >
@@ -124,7 +189,7 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
       {!collapsed && (
         <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-          {/* ── Location row ─────────────────────────────────────── */}
+          {/* ── Location / Elevation / IATA ──────────────────────── */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <InfoTile
               icon={<MapPin size={12} />}
@@ -133,20 +198,14 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
               value={hasData && (airportData.city || airportData.state)
                 ? [airportData.city, airportData.state].filter(Boolean).join(', ')
                 : null}
-              textSecondary={textSecondary}
-              textPrimary={textPrimary}
-              borderCol={borderCol}
+              textSecondary={textSecondary} textPrimary={textPrimary} borderCol={borderCol}
             />
             <InfoTile
               icon={<TrendingUp size={12} />}
               label="Elevation"
               loading={loading}
-              value={hasData && airportData.elevation_ft != null
-                ? `${airportData.elevation_ft.toLocaleString()} ft MSL`
-                : null}
-              textSecondary={textSecondary}
-              textPrimary={textPrimary}
-              borderCol={borderCol}
+              value={elevation != null ? `${elevation.toLocaleString()} ft MSL` : null}
+              textSecondary={textSecondary} textPrimary={textPrimary} borderCol={borderCol}
             />
             {hasData && airportData.iataCode && (
               <InfoTile
@@ -154,12 +213,59 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
                 label="IATA Code"
                 loading={false}
                 value={airportData.iataCode}
-                textSecondary={textSecondary}
-                textPrimary={textPrimary}
-                borderCol={borderCol}
+                textSecondary={textSecondary} textPrimary={textPrimary} borderCol={borderCol}
               />
             )}
           </div>
+
+          {/* ── Traffic Pattern Altitude ──────────────────────────── */}
+          {(loading || elevation != null) && (
+            <div>
+              <SectionLabel icon={<Wind size={12} />} label="Traffic Pattern Altitude" textSecondary={textSecondary} />
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '6px' }}>
+                  {[1,2,3,4].map(i => <Skeleton key={i} width="100%" height="22px" />)}
+                </div>
+              ) : (
+                <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {TPA_STANDARDS.map(({ category, agl, color }) => {
+                    const msl = elevation + agl;
+                    return (
+                      <div key={category} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '5px 10px', borderRadius: '7px',
+                        background: 'rgba(255,255,255,0.04)', border: `1px solid ${borderCol}`,
+                        fontSize: '0.72rem',
+                      }}>
+                        <span style={{ color: textSecondary }}>{category}</span>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span style={{ color: textSecondary, fontSize: '0.67rem' }}>
+                            +{agl.toLocaleString()} AGL
+                          </span>
+                          <span style={{ fontWeight: 700, color, minWidth: '72px', textAlign: 'right' }}>
+                            {msl.toLocaleString()} ft MSL
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* VFR vs IFR note */}
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '6px',
+                    padding: '5px 10px', borderRadius: '7px',
+                    background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.2)',
+                    fontSize: '0.67rem', color: textSecondary, marginTop: '2px',
+                  }}>
+                    <span style={{ color: '#fb923c', fontWeight: 700, whiteSpace: 'nowrap' }}>IFR</span>
+                    <span>Follow published approach minimums and ATC clearance. TPA does not apply.</span>
+                  </div>
+                  <p style={{ fontSize: '0.62rem', color: textSecondary, margin: '2px 0 0', lineHeight: 1.4 }}>
+                    Standard FAA defaults. Check Chart Supplement for published non-standard TPAs.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Runways ──────────────────────────────────────────── */}
           {(loading || hasRunways) && (
@@ -172,10 +278,7 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto', marginTop: '6px' }}>
-                  <table style={{
-                    width: '100%', borderCollapse: 'collapse',
-                    fontSize: '0.72rem', color: textPrimary,
-                  }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', color: textPrimary }}>
                     <thead>
                       <tr style={{ color: textSecondary, textAlign: 'left' }}>
                         <Th>ID</Th>
@@ -216,16 +319,21 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
               <SectionLabel icon={<Radio size={12} />} label="Communications" textSecondary={textSecondary} />
               {loading ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                  {[80, 110, 90, 95, 105].map(w => <Skeleton key={w} width={`${w}px`} height="26px" />)}
+                  {[80, 110, 90, 95, 105].map(w => <Skeleton key={w} width={`${w}px`} height="44px" />)}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
                   {airportData.frequencies.map((f, i) => {
-                    const st = freqBadgeStyle(f.type);
+                    const label = freqTypeLabel(f.rawType ?? f.type);
+                    const st = freqBadgeStyle(label);
+                    // For tower/approach/departure, try to show which runway from description
+                    const runwayHint = ['Tower', 'Approach', 'Departure'].includes(label)
+                      ? extractRunway(f.description)
+                      : null;
                     return (
                       <div
                         key={i}
-                        title={f.description || f.type}
+                        title={f.description || label}
                         style={{
                           display: 'flex', flexDirection: 'column', alignItems: 'center',
                           padding: '5px 10px', borderRadius: '8px', minWidth: '72px',
@@ -233,11 +341,16 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
                         }}
                       >
                         <span style={{ fontSize: '0.6rem', fontWeight: 700, color: st.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {f.type}
+                          {label}
                         </span>
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f8fafc', marginTop: '1px' }}>
                           {f.mhz.toFixed(3)}
                         </span>
+                        {runwayHint && (
+                          <span style={{ fontSize: '0.58rem', color: st.text, opacity: 0.85, marginTop: '2px', letterSpacing: '0.02em' }}>
+                            RWY {runwayHint}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
@@ -246,13 +359,12 @@ export default function AirportInfoPanel({ airportData, loading, theme }) {
             </div>
           )}
 
-          {/* Empty state */}
+          {/* Empty / unavailable states */}
           {!loading && !hasFreqs && !hasRunways && airportData && (
             <p style={{ fontSize: '0.72rem', color: textSecondary, margin: 0, textAlign: 'center', padding: '4px 0' }}>
               No additional details available for this airport.
             </p>
           )}
-
           {!loading && !airportData && (
             <p style={{ fontSize: '0.72rem', color: textSecondary, margin: 0, textAlign: 'center', padding: '4px 0' }}>
               Airport details unavailable.
