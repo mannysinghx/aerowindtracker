@@ -70,12 +70,14 @@ const CLASS_CONFIG = {
   D: { color: '#818cf8', radius: 7,  fillOpacity: 0.05, weight: 1.5, minZoom: 9,  label: 'Class D' },
 };
 
-function getAirspaceClass(airport) {
+export function getAirspaceClass(airport) {
   if (airport.type === 'large_airport')  return 'B';
   if (airport.type === 'medium_airport') return 'C';
   if (CLASS_D_SET.has(airport.id))       return 'D';
   return null;
 }
+
+export { CLASS_D_SET };
 
 export default function AirspaceDotsLayer({ allAirports }) {
   const map = useMap();

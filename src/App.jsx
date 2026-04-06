@@ -16,7 +16,7 @@ import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
 import FlightPathPanel from './components/FlightPathPanel';
 import FlightPathLayer from './components/FlightPathLayer';
-import AirspaceDotsLayer from './components/AirspaceDotsLayer';
+import AirspaceDotsLayer, { CLASS_D_SET, getAirspaceClass } from './components/AirspaceDotsLayer';
 import './App.css';
 
 const ALTITUDES = [
@@ -244,8 +244,32 @@ function App() {
   const [searchTarget, setSearchTarget] = useState(null);
   const [searchedAirport, setSearchedAirport] = useState(null);
 
-  // Airport class filter: 'bcd' = Class B/C/D (large+medium), 'e' = + Class E (small), 'all' = everything
-  const [airportFilter, setAirportFilter] = useState('bcd');
+  // Airport class filter: string of active class letters, e.g. 'BCD', 'B', 'BCDE'
+  // B=large, C=medium, D=CLASS_D_SET small fields, E=all other small airports
+  const [airportFilter, setAirportFilter] = useState('BCD');
+
+  // Toggle a single class letter on/off; 'all' shortcut enables B+C+D+E
+  const toggleAirportClass = (cls) => {
+    if (cls === 'all') { setAirportFilter('BCDE'); return; }
+    setAirportFilter(prev => {
+      const active = ['B','C','D','E'].filter(c => prev.includes(c));
+      const has = active.includes(cls);
+      const next = has
+        ? active.filter(c => c !== cls)   // remove
+        : [...active, cls];               // add
+      // Keep at least one class active
+      const ordered = ['B','C','D','E'].filter(c => next.includes(c));
+      return ordered.length ? ordered.join('') : prev;
+    });
+  };
+
+  // Classify an airport entry into its FAA class letter
+  const getAirportClassLocal = (ap) => {
+    if (ap.type === 'large_airport')  return 'B';
+    if (ap.type === 'medium_airport') return 'C';
+    if (CLASS_D_SET.has(ap.id))       return 'D';
+    return 'E'; // small_airport, seaplane_base, heliport, etc.
+  };
 
   // Display size controls
   const [runwayFontSize, setRunwayFontSize] = useState(16);    // runway endpoint text (e.g. "07/25")
@@ -502,11 +526,10 @@ function App() {
 
     if (allAirports.length > 0) {
       // We have the massive 16,000 regional DB
-      // Apply class filter first: B/C/D = large+medium, +E = add small, all = everything
+      // Apply per-class filter: each letter in airportFilter enables that class
       const classFiltered = allAirports.filter(ap => {
-        if (airportFilter === 'bcd') return ap.type === 'large_airport' || ap.type === 'medium_airport';
-        if (airportFilter === 'e') return true; // all types (large + medium + small)
-        return true; // 'all'
+        const cls = getAirportClassLocal(ap);
+        return airportFilter.includes(cls);
       });
       const activeAirports = classFiltered.filter(ap =>
         ap.lat >= mapBounds.getSouth() - 0.2 &&
@@ -1279,28 +1302,39 @@ function App() {
             {/* Airport Class Filter */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Airports Shown</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
                 {[
-                  { key: 'bcd', label: 'Class B / C / D', sub: 'Major & regional (~916)', icon: '✈' },
-                  { key: 'e',   label: '+ Class E',        sub: 'Adds towered GA (~16K)', icon: '🛩' },
-                  { key: 'all', label: 'All Airports',     sub: 'Everything incl. private', icon: '⬡' },
-                ].map(({ key, label, sub, icon }) => (
-                  <div key={key} onClick={() => setAirportFilter(key)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '7px 10px', borderRadius: '8px', cursor: 'pointer',
-                      background: airportFilter === key ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${airportFilter === key ? 'var(--accent-color)' : 'var(--panel-border)'}`,
-                      transition: 'all 0.15s',
-                    }}>
-                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>{icon}</span>
-                    <div>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: airportFilter === key ? 'var(--accent-color)' : 'var(--text-primary)' }}>{label}</div>
-                      <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', marginTop: '1px' }}>{sub}</div>
+                  { cls: 'B', label: 'Class B', color: '#38bdf8', sub: 'Major hubs' },
+                  { cls: 'C', label: 'Class C', color: '#e879f9', sub: 'Regional' },
+                  { cls: 'D', label: 'Class D', color: '#818cf8', sub: 'Towered GA' },
+                  { cls: 'E', label: 'Class E', color: '#4ade80', sub: 'Small GA' },
+                ].map(({ cls, label, color, sub }) => {
+                  const active = airportFilter.includes(cls);
+                  return (
+                    <div key={cls} onClick={() => toggleAirportClass(cls)}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        padding: '6px 10px', borderRadius: '8px', cursor: 'pointer',
+                        flex: '1 1 40%', minWidth: '80px',
+                        background: active ? `${color}18` : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${active ? color : 'var(--panel-border)'}`,
+                        transition: 'all 0.15s',
+                      }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: active ? color : 'var(--text-secondary)', letterSpacing: '0.03em' }}>{label}</span>
+                      <span style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{sub}</span>
                     </div>
-                    {airportFilter === key && <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-color)' }} />}
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+              <div onClick={() => toggleAirportClass('all')}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '5px 10px', borderRadius: '8px', cursor: 'pointer',
+                  background: airportFilter === 'BCDE' ? 'rgba(148,163,184,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${airportFilter === 'BCDE' ? '#94a3b8' : 'var(--panel-border)'}`,
+                  transition: 'all 0.15s',
+                }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: airportFilter === 'BCDE' ? '#94a3b8' : 'var(--text-secondary)' }}>Show All Classes</span>
               </div>
             </div>
 
@@ -1562,37 +1596,43 @@ function App() {
         {/* ── Airport Class Filter Strip (bottom-center of map) ── */}
         <div className="ui-element" style={{
           position: 'absolute', bottom: '28px', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 1200, pointerEvents: 'auto', display: 'flex', gap: '0',
+          zIndex: 1200, pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '0',
           background: theme === 'dark' ? 'rgba(15,23,42,0.88)' : 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
           border: '1px solid var(--panel-border)', borderRadius: '30px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.35)', overflow: 'hidden',
         }}>
           {[
-            { key: 'bcd', short: 'B / C / D', tooltip: 'Major & regional airports' },
-            { key: 'e',   short: '+ Class E',  tooltip: 'Add small GA airports' },
-            { key: 'all', short: 'All',         tooltip: 'All airports incl. private' },
-          ].map(({ key, short, tooltip }, idx, arr) => (
-            <button
-              key={key}
-              title={tooltip}
-              onClick={() => setAirportFilter(key)}
-              style={{
-                padding: '7px 14px',
-                border: 'none',
-                borderLeft: idx > 0 ? '1px solid var(--panel-border)' : 'none',
-                background: airportFilter === key
-                  ? 'var(--accent-color)'
-                  : 'transparent',
-                color: airportFilter === key ? '#fff' : 'var(--text-secondary)',
-                fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.5px',
-                cursor: 'pointer', transition: 'all 0.18s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {short}
-            </button>
-          ))}
+            { cls: 'B', label: 'Class B', color: '#38bdf8', tooltip: 'Class B — major hubs (large airports)' },
+            { cls: 'C', label: 'Class C', color: '#e879f9', tooltip: 'Class C — regional airports (medium airports)' },
+            { cls: 'D', label: 'Class D', color: '#818cf8', tooltip: 'Class D — towered GA airports' },
+            { cls: 'E', label: 'Class E', color: '#4ade80', tooltip: 'Class E — small GA airports' },
+            { cls: 'all', label: 'All',   color: '#94a3b8', tooltip: 'Show all airport classes' },
+          ].map(({ cls, label, color, tooltip }, idx) => {
+            const active = cls === 'all'
+              ? airportFilter === 'BCDE'
+              : airportFilter.includes(cls);
+            return (
+              <button
+                key={cls}
+                title={tooltip}
+                onClick={() => toggleAirportClass(cls)}
+                style={{
+                  padding: '6px 13px',
+                  border: 'none',
+                  borderLeft: idx > 0 ? '1px solid var(--panel-border)' : 'none',
+                  background: active ? `${color}22` : 'transparent',
+                  color: active ? color : 'var(--text-secondary)',
+                  fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.5px',
+                  cursor: 'pointer', transition: 'all 0.18s',
+                  whiteSpace: 'nowrap',
+                  boxShadow: active ? `inset 0 -2px 0 ${color}` : 'none',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Chat Copilot Widget — hidden on mobile */}
