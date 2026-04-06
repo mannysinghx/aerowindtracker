@@ -540,15 +540,20 @@ function App() {
       );
 
       if (activeAirports.length > 1500) {
-        // Zoomed out too far, just show major reporting stations in bounds
-        targetAirports = stations.filter(s =>
-          s.lat >= mapBounds.getSouth() - 0.2 &&
-          s.lat <= mapBounds.getNorth() + 0.2 &&
-          s.lon >= mapBounds.getWest() - 0.2 &&
-          s.lon <= mapBounds.getEast() + 0.2
-        ).map(s => ({ id: s.icaoId, name: s.name || s.icaoId, lat: s.lat, lon: s.lon }));
+        // Too many to render — show only METAR stations that match the selected classes
+        const apLookup = new Map(allAirports.map(ap => [ap.id, ap]));
+        targetAirports = stations.filter(s => {
+          if (
+            s.lat < mapBounds.getSouth() - 0.2 || s.lat > mapBounds.getNorth() + 0.2 ||
+            s.lon < mapBounds.getWest() - 0.2  || s.lon > mapBounds.getEast() + 0.2
+          ) return false;
+          // Match against the class filter using the airport record (if available)
+          const ap = apLookup.get(s.icaoId) || apLookup.get('K' + s.icaoId);
+          const cls = ap ? getAirportClassLocal(ap) : 'E';
+          return airportFilter.includes(cls);
+        }).map(s => ({ id: s.icaoId, name: s.name || s.icaoId, lat: s.lat, lon: s.lon }));
       } else {
-        // Safe to render regional airports!
+        // Safe to render class-filtered airports directly
         targetAirports = activeAirports;
       }
     } else {
@@ -967,7 +972,30 @@ function App() {
               position={[point.lat, point.lon]}
               icon={customIcon}
               eventHandlers={{
-                click: () => { setSelectedStation(point); setSearchedAirport(null); setMobilePanelExpanded(false); }
+                click: () => {
+                // Find the nearest real METAR station for live weather data
+                let nearestDist = Infinity;
+                let nearestStation = null;
+                for (const st of stations) {
+                  if (st.icaoId === point.id) { nearestStation = st; break; }
+                  const d = getDistance(point.lat, point.lon, st.lat, st.lon);
+                  if (d < nearestDist) { nearestDist = d; nearestStation = st; }
+                }
+                setSelectedStation({
+                  id: nearestStation ? nearestStation.icaoId : point.id,
+                  airportIcao: point.id,  // always use the clicked airport's ICAO for info panel
+                  name: point.name,
+                  lat: nearestStation ? nearestStation.lat : point.lat,
+                  lon: nearestStation ? nearestStation.lon : point.lon,
+                  windDir: point.windDir,
+                  windSpeed: point.windSpeed,
+                  gusts: point.gusts,
+                  temp: point.temp,
+                  dew: point.dew,
+                });
+                setSearchedAirport(null);
+                setMobilePanelExpanded(false);
+              }
               }}
             />
           );
@@ -1000,7 +1028,7 @@ function App() {
             }}
           />
         ))}
-        <AirspaceDotsLayer allAirports={allAirports} />
+        <AirspaceDotsLayer allAirports={allAirports} airportFilter={airportFilter} />
         {flightRouteData && <FlightPathLayer routeData={flightRouteData} theme={theme} />}
       </MapContainer>
 

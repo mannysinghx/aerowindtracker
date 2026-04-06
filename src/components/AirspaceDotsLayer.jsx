@@ -79,7 +79,7 @@ export function getAirspaceClass(airport) {
 
 export { CLASS_D_SET };
 
-export default function AirspaceDotsLayer({ allAirports }) {
+export default function AirspaceDotsLayer({ allAirports, airportFilter = 'BCDE' }) {
   const map = useMap();
   const [zoom, setZoom]     = useState(() => map.getZoom());
   const [bounds, setBounds] = useState(() => map.getBounds());
@@ -93,8 +93,8 @@ export default function AirspaceDotsLayer({ allAirports }) {
     if (!allAirports) return [];
     return allAirports
       .map(a => ({ ...a, cls: getAirspaceClass(a) }))
-      .filter(a => a.cls !== null);
-  }, [allAirports]);
+      .filter(a => a.cls !== null && airportFilter.includes(a.cls));
+  }, [allAirports, airportFilter]);
 
   const visible = useMemo(() => {
     return dots.filter(a => {
@@ -125,8 +125,11 @@ export default function AirspaceDotsLayer({ allAirports }) {
               fillColor: cfg.color,
               fillOpacity: cfg.fillOpacity,
               weight: cfg.weight,
+              // Ensure the circle never captures pointer events — wind arrow markers sit on top
+              className: 'airspace-ring',
             }}
             interactive={false}
+            bubblingMouseEvents={false}
           >
             {zoom >= 9 && (
               <Tooltip
