@@ -145,12 +145,15 @@ const CLASS_CONFIG = {
 /**
  * Classify an airport by its FAA airspace class.
  * Uses authoritative hardcoded sets — NOT OurAirports type field.
+ * us_airports.json stores IDs without the K prefix (e.g. "ATL" not "KATL"),
+ * so we check both forms against the K-prefixed sets.
  */
 export function getAirspaceClass(airport) {
-  const id = airport.id;
-  if (CLASS_B_SET.has(id)) return 'B';
-  if (CLASS_C_SET.has(id)) return 'C';
-  if (CLASS_D_SET.has(id)) return 'D';
+  const id  = airport.id;                              // e.g. "ATL"
+  const kid = id.startsWith('K') ? id : 'K' + id;     // e.g. "KATL"
+  if (CLASS_B_SET.has(id) || CLASS_B_SET.has(kid)) return 'B';
+  if (CLASS_C_SET.has(id) || CLASS_C_SET.has(kid)) return 'C';
+  if (CLASS_D_SET.has(id) || CLASS_D_SET.has(kid)) return 'D';
   return null; // Class E or uncontrolled
 }
 

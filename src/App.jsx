@@ -263,12 +263,14 @@ function App() {
     });
   };
 
-  // Classify an airport by FAA airspace class using authoritative sets
-  // (OurAirports type field is NOT reliable for FAA class — large_airport != Class B)
+  // Classify an airport by FAA airspace class using authoritative sets.
+  // us_airports.json uses IDs without K prefix ("ATL" not "KATL"), so check both forms.
   const getAirportClassLocal = (ap) => {
-    if (CLASS_B_SET.has(ap.id)) return 'B';
-    if (CLASS_C_SET.has(ap.id)) return 'C';
-    if (CLASS_D_SET.has(ap.id)) return 'D';
+    const id  = ap.id;
+    const kid = id.startsWith('K') ? id : 'K' + id;
+    if (CLASS_B_SET.has(id) || CLASS_B_SET.has(kid)) return 'B';
+    if (CLASS_C_SET.has(id) || CLASS_C_SET.has(kid)) return 'C';
+    if (CLASS_D_SET.has(id) || CLASS_D_SET.has(kid)) return 'D';
     return 'E';
   };
 
