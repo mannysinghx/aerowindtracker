@@ -154,8 +154,6 @@ export function getAirspaceClass(airport) {
   return null; // Class E or uncontrolled
 }
 
-export { CLASS_D_SET };
-
 export default function AirspaceDotsLayer({ allAirports, airportFilter = 'BCDE' }) {
   const map = useMap();
   const [zoom, setZoom]     = useState(() => map.getZoom());
