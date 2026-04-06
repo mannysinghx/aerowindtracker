@@ -17,7 +17,7 @@ import AgentDashboard from './components/AgentDashboard';
 import AgentMapOverlay from './components/AgentMapOverlay';
 import FlightPathPanel from './components/FlightPathPanel';
 import FlightPathLayer from './components/FlightPathLayer';
-import AirspaceDotsLayer, { CLASS_D_SET, getAirspaceClass } from './components/AirspaceDotsLayer';
+import AirspaceDotsLayer, { CLASS_B_SET, CLASS_C_SET, CLASS_D_SET, getAirspaceClass } from './components/AirspaceDotsLayer';
 import './App.css';
 
 const ALTITUDES = [
@@ -264,12 +264,13 @@ function App() {
     });
   };
 
-  // Classify an airport entry into its FAA class letter
+  // Classify an airport by FAA airspace class using authoritative sets
+  // (OurAirports type field is NOT reliable for FAA class — large_airport != Class B)
   const getAirportClassLocal = (ap) => {
-    if (ap.type === 'large_airport')  return 'B';
-    if (ap.type === 'medium_airport') return 'C';
-    if (CLASS_D_SET.has(ap.id))       return 'D';
-    return 'E'; // small_airport, seaplane_base, heliport, etc.
+    if (CLASS_B_SET.has(ap.id)) return 'B';
+    if (CLASS_C_SET.has(ap.id)) return 'C';
+    if (CLASS_D_SET.has(ap.id)) return 'D';
+    return 'E';
   };
 
   // Display size controls
