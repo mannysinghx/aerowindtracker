@@ -456,3 +456,6 @@
   padding: 0 !important;
 }
 .airspace-dot-label::before { display: none !important; }
+
+/* Airspace rings are decorative — never block clicks on wind markers beneath */
+.airspace-ring path { pointer-events: none !important; }
